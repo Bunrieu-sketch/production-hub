@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="projects-page">
+    <h1>Projects</h1>
+    <div class="project-grid">
+        <a href="http://localhost:5050" target="_blank" class="project-card">
+            <div class="project-icon">📺</div>
+            <h3>YouTube Dashboard</h3>
+            <p>Sponsor CRM & content pipeline</p>
+            <span class="project-port">:5050</span>
+        </a>
+        <a href="http://localhost:5052" target="_blank" class="project-card">
+            <div class="project-icon">🔍</div>
+            <h3>Competitor Tracker</h3>
+            <p>Competitor intelligence dashboard</p>
+            <span class="project-port">:5052</span>
+        </a>
+        <a href="/" class="project-card">
+            <div class="project-icon">🚀</div>
+            <h3>Mission Control</h3>
+            <p>Task management & overview</p>
+            <span class="project-port">:5053</span>
+        </a>
+    </div>
+</div>
+{% endblock %}

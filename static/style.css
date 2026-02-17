@@ -1,0 +1,100 @@
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+    --bg: #0d1117; --card: #161b22; --border: #30363d;
+    --text: #e6edf3; --text-dim: #7d8590; --accent: #a371f7;
+    --accent-hover: #8957e5;
+    --green: #3fb950; --green-dim: #238636;
+    --blue: #58a6ff; --orange: #d29922; --red: #f85149;
+}
+body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; display:flex; height:100vh; overflow:hidden; }
+
+/* Sidebar */
+.sidebar { width:200px; background:var(--card); border-right:1px solid var(--border); display:flex; flex-direction:column; padding:16px 12px; gap:4px; flex-shrink:0; }
+.sidebar-logo { display:flex; align-items:center; gap:10px; padding:8px 8px 16px; border-bottom:1px solid var(--border); margin-bottom:8px; }
+.sidebar-logo span:first-child { font-size:22px; }
+.logo-text { font-size:15px; font-weight:600; color:var(--text); }
+.nav-item { display:flex; align-items:center; gap:12px; padding:8px 12px; border-radius:6px; color:var(--text-dim); text-decoration:none; transition:all .15s; font-size:13px; }
+.nav-item:hover { background:#21262d; color:var(--text); }
+.nav-item.active { background:rgba(163,113,247,0.15); color:var(--accent); }
+.nav-item svg { flex-shrink:0; }
+
+/* Content */
+.content { flex:1; overflow:auto; padding:24px; }
+
+/* MC Layout */
+.mc-layout { display:flex; gap:24px; height:calc(100vh - 48px); }
+.mc-main { flex:1; display:flex; flex-direction:column; min-width:0; }
+.mc-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.mc-header h1 { font-size:22px; font-weight:600; }
+
+/* Stats */
+.stats-bar { display:flex; gap:32px; margin-bottom:20px; padding:16px 20px; background:transparent; }
+.stat-item { display:flex; align-items:baseline; gap:10px; }
+.stat-value { font-size:28px; font-weight:700; line-height:1; }
+.stat-value.green { color:var(--green); }
+.stat-value.purple { color:var(--accent); }
+.stat-value.white { color:#fff; }
+.stat-label { font-size:13px; color:var(--text-dim); }
+
+/* Kanban */
+.kanban { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; flex:1; overflow:auto; }
+.kanban-col { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px; display:flex; flex-direction:column; min-height:0; }
+.col-header { font-size:13px; font-weight:600; color:var(--text-dim); margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+.col-count { background:var(--border); border-radius:10px; padding:1px 8px; font-size:11px; margin-left:auto; }
+.col-dot { width:8px; height:8px; border-radius:50%; }
+.col-dot.backlog { background:#8b949e; }
+.col-dot.in_progress { background:#58a6ff; }
+.col-dot.review { background:#d29922; }
+.col-dot.done { background:#3fb950; }
+.col-cards { display:flex; flex-direction:column; gap:8px; overflow-y:auto; flex:1; }
+
+/* Task Card */
+.task-card { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:12px; cursor:grab; transition:border-color .15s; }
+.task-card:hover { border-color:var(--accent); }
+.task-card.dragging { opacity:.5; }
+.task-card .card-top { display:flex; align-items:center; gap:6px; margin-bottom:4px; }
+.priority-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.priority-dot.low { background:#8b949e; }
+.priority-dot.normal { background:#58a6ff; }
+.priority-dot.high { background:#d29922; }
+.priority-dot.urgent { background:#f85149; }
+.card-title { font-size:13px; font-weight:600; color:#fff; }
+.card-desc { font-size:12px; color:var(--text-dim); margin:4px 0 8px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.card-tag { font-size:10px; padding:2px 8px; border-radius:10px; display:inline-block; }
+.tag-general { background:#21262d; color:#8b949e; }
+.tag-youtube_dashboard { background:#1a1a2e; color:#e879f9; }
+.tag-competitor_tracker { background:#0f2922; color:#34d399; }
+
+/* Activity Panel */
+.activity-panel { width:280px; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; overflow-y:auto; flex-shrink:0; }
+.activity-panel h3 { font-size:14px; font-weight:600; margin-bottom:12px; color:var(--text-dim); }
+.activity-item { padding:8px 0; border-bottom:1px solid var(--border); }
+.activity-item:last-child { border:none; }
+.activity-text { font-size:12px; color:var(--text); }
+.activity-time { font-size:11px; color:var(--text-dim); margin-top:2px; }
+
+/* Button */
+.btn-primary { background:var(--accent); color:#fff; border:none; padding:8px 16px; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; transition:background .15s; }
+.btn-primary:hover { background:var(--accent-hover); }
+
+/* Modal */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:100; }
+.modal { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:24px; width:400px; }
+.modal h3 { margin-bottom:16px; }
+.modal input, .modal textarea, .modal select { width:100%; padding:8px 12px; margin-bottom:10px; background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px; resize:none; }
+.modal input:focus, .modal textarea:focus, .modal select:focus { outline:none; border-color:var(--accent); }
+.modal .btn-primary { width:100%; margin-top:4px; }
+
+/* Projects */
+.projects-page { max-width:800px; }
+.projects-page h1 { margin-bottom:24px; }
+.project-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; }
+.project-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; text-decoration:none; color:var(--text); transition:border-color .15s; display:block; }
+.project-card:hover { border-color:var(--accent); }
+.project-icon { font-size:32px; margin-bottom:8px; }
+.project-card h3 { color:#fff; margin-bottom:4px; font-size:15px; }
+.project-card p { font-size:12px; color:var(--text-dim); margin-bottom:8px; }
+.project-port { font-size:11px; color:var(--accent); }
+
+/* Drag over */
+.kanban-col.drag-over { background:rgba(139,92,246,.08); border-color:var(--accent); }
