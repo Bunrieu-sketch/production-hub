@@ -40,10 +40,10 @@ export function Sidebar() {
             <BarChart3 size={16} />
             <span>Videos</span>
           </Link>
-          <a href="http://localhost:5052" target="_blank" rel="noopener noreferrer" className="nav-item nested">
+          <Link href="/competitor-intel" className={`nav-item nested ${pathname === '/competitor-intel' ? 'active' : ''}`}>
             <Search size={16} />
             <span>Competitor Intel</span>
-          </a>
+          </Link>
           <Link href="/projects" className={`nav-item nested ${pathname === '/projects' ? 'active' : ''}`}>
             <FolderOpen size={16} />
             <span>All Projects</span>
