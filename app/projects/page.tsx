@@ -1,4 +1,4 @@
-import { FolderKanban, BarChart3, Plane, FileText } from 'lucide-react';
+import { FolderKanban, BarChart3, Plane, FileText, Video, Handshake } from 'lucide-react';
 
 interface Project {
   name: string;
@@ -10,16 +10,21 @@ interface Project {
 
 const projects: Project[] = [
   {
-    name: 'YouTube Dashboard',
-    description: 'Video pipeline, sponsor CRM, and deal tracking',
+    name: 'Sponsor CRM',
+    description: 'Sponsor pipeline, deal tracking, and payments',
     port: 5050,
-    icon: BarChart3,
+    icon: Handshake,
     links: [
       { label: 'Dashboard', path: '/' },
-      { label: 'Videos', path: '/videos' },
-      { label: 'Sponsors', path: '/sponsors' },
+      { label: 'Sponsors', path: '/sponsors-v2' },
       { label: 'Guide', path: '/crm-guide' },
     ]
+  },
+  {
+    name: 'Video Pipeline',
+    description: 'Video ideas, production tracking, and publishing',
+    port: 5054,
+    icon: Video,
   },
   {
     name: 'Competitor Intel',

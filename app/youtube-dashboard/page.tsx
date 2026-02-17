@@ -5,8 +5,9 @@ import { Suspense } from 'react';
 
 function DashboardEmbed() {
   const searchParams = useSearchParams();
+  const port = searchParams.get('port') || '5050';
   const path = searchParams.get('path') || '/sponsors-v2';
-  const src = `http://localhost:5050${path}?embedded=1`;
+  const src = `http://localhost:${port}${path}?embedded=1`;
 
   return (
     <div className="embed-container">

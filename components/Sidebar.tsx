@@ -2,12 +2,18 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { LayoutGrid, Kanban, FolderOpen, FileText, BarChart3, ChevronDown, ChevronRight, Search } from 'lucide-react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { LayoutGrid, Kanban, FolderOpen, FileText, BarChart3, Video, ChevronDown, ChevronRight, Search } from 'lucide-react';
 
 export function Sidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [projectsOpen, setProjectsOpen] = useState(true);
+
+  const isDashboard = pathname === '/youtube-dashboard';
+  const currentPort = searchParams.get('port');
+  const isSponsors = isDashboard && (currentPort === '5050' || !currentPort);
+  const isVideos = isDashboard && currentPort === '5054';
 
   return (
     <nav className="sidebar">
@@ -32,12 +38,12 @@ export function Sidebar() {
 
       {projectsOpen && (
         <div className="nav-nested">
-          <Link href="/youtube-dashboard?path=/sponsors-v2" className={`nav-item nested ${pathname === '/youtube-dashboard' ? 'active' : ''}`}>
+          <Link href="/youtube-dashboard?port=5050&path=/sponsors-v2" className={`nav-item nested ${isSponsors ? 'active' : ''}`}>
             <BarChart3 size={16} />
             <span>Sponsors</span>
           </Link>
-          <Link href="/youtube-dashboard?path=/videos" className={`nav-item nested ${pathname === '/youtube-dashboard' && false ? 'active' : ''}`}>
-            <BarChart3 size={16} />
+          <Link href="/youtube-dashboard?port=5054&path=/" className={`nav-item nested ${isVideos ? 'active' : ''}`}>
+            <Video size={16} />
             <span>Videos</span>
           </Link>
           <Link href="/competitor-intel" className={`nav-item nested ${pathname === '/competitor-intel' ? 'active' : ''}`}>
