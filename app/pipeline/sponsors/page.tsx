@@ -19,6 +19,12 @@ interface Sponsor {
   offer_date: string; contract_date: string; episode_id: number | null;
   cpm_rate: number | null; cpm_cap: number | null; mvg: number | null;
   views_at_30_days: number;
+  episode_view_count?: number | null;
+  episode_view_count_updated_at?: string | null;
+  episode_youtube_video_id?: string | null;
+  episode_thumbnail_url?: string | null;
+  episode_publish_date?: string | null;
+  episode_target_publish_date?: string | null;
 }
 
 interface Alert {
@@ -101,54 +107,106 @@ function daysBetween(a: Date, b: Date) {
   return Math.floor((a.getTime() - b.getTime()) / 86400000);
 }
 
-// Calculate actual CPM deal value based on views
-function getCpmDealValue(sponsor: Sponsor): { amount: number | null; label: string; isPending: boolean } {
-  if (sponsor.deal_type !== 'cpm') {
-    return { amount: sponsor.deal_value_net, label: `$${sponsor.deal_value_net?.toLocaleString(undefined, { maximumFractionDigits: 0 })} net`, isPending: false };
-  }
-  
-  const cpmRate = sponsor.cpm_rate || 0;
-  const cpmCap = sponsor.cpm_cap || 0;
-  const views = sponsor.views_at_30_days || 0;
-  const capNet = cpmCap * 0.8; // 20% agency commission
-  
-  // If views recorded, calculate actual amount
-  if (views > 0) {
-    const grossAmount = Math.min((views / 1000) * cpmRate, cpmCap);
-    const netAmount = grossAmount * 0.8;
-    const hitCap = (views / 1000) * cpmRate >= cpmCap;
-    return { 
-      amount: netAmount, 
-      label: `$${netAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })} net${hitCap ? ' (cap)' : ''}`,
-      isPending: false 
+const DAY_MS = 86400000;
+
+function getPublishDate(sponsor: Sponsor) {
+  const dateStr = sponsor.live_date || sponsor.episode_publish_date || sponsor.episode_target_publish_date;
+  if (!dateStr) return null;
+  const date = new Date(dateStr);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatMoney(amount: number) {
+  return `$${amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+}
+
+function calcCpmAmount(views: number, rate: number, cap: number) {
+  const capValue = cap > 0 ? cap : Number.POSITIVE_INFINITY;
+  const gross = Math.min((views / 1000) * rate, capValue);
+  const net = gross * 0.8;
+  const hitCap = cap > 0 && (views / 1000) * rate >= cap;
+  return { gross, net, hitCap };
+}
+
+function getCpmSnapshot(sponsor: Sponsor) {
+  const rate = sponsor.cpm_rate || 0;
+  const cap = sponsor.cpm_cap || 0;
+  const liveViews = sponsor.episode_view_count || 0;
+  const lockedViews = sponsor.views_at_30_days || 0;
+
+  if (!sponsor.episode_id) {
+    return {
+      amount: 0,
+      label: 'Pending link',
+      color: 'var(--orange)',
+      status: 'pending_link' as const,
+      daysLeft: null,
+      viewsUsed: 0,
+      isLocked: false,
     };
   }
-  
-  // If published but no views recorded yet (within 30 day window)
-  if (['published', 'invoiced', 'paid'].includes(sponsor.stage)) {
-    return { 
-      amount: null, 
-      label: `Pending (cap: $${capNet.toLocaleString(undefined, { maximumFractionDigits: 0 })})`,
-      isPending: true 
+
+  const publishDate = getPublishDate(sponsor);
+  if (!publishDate) {
+    return {
+      amount: 0,
+      label: 'Pending publish date',
+      color: 'var(--orange)',
+      status: 'pending_link' as const,
+      daysLeft: null,
+      viewsUsed: liveViews,
+      isLocked: false,
     };
   }
-  
-  // Not yet published - show cap as potential max
-  return { 
-    amount: capNet, 
-    label: `Cap: $${capNet.toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
-    isPending: true 
+
+  const daysSince = Math.floor((Date.now() - publishDate.getTime()) / DAY_MS);
+  const daysLeft = Math.max(0, 30 - daysSince);
+
+  if (daysSince >= 30) {
+    if (lockedViews > 0) {
+      const { net } = calcCpmAmount(lockedViews, rate, cap);
+      return {
+        amount: net,
+        label: `Final: ${formatMoney(net)} (${lockedViews.toLocaleString()} views)`,
+        color: 'var(--green)',
+        status: 'locked' as const,
+        daysLeft: 0,
+        viewsUsed: lockedViews,
+        isLocked: true,
+      };
+    }
+    const { net } = calcCpmAmount(liveViews, rate, cap);
+    return {
+      amount: net,
+      label: `Final pending lock (${liveViews.toLocaleString()} views)`,
+      color: 'var(--orange)',
+      status: 'needs_lock' as const,
+      daysLeft: 0,
+      viewsUsed: liveViews,
+      isLocked: false,
+    };
+  }
+
+  const { net } = calcCpmAmount(liveViews, rate, cap);
+  return {
+    amount: net,
+    label: `${formatMoney(net)} (${liveViews.toLocaleString()} views)`,
+    color: 'var(--green)',
+    status: 'pre_lock' as const,
+    daysLeft,
+    viewsUsed: liveViews,
+    isLocked: false,
   };
 }
 
 // Get display value for a sponsor (handles both flat rate and CPM)
 function getDisplayValue(sponsor: Sponsor): { amount: number; label: string; color: string } {
   if (sponsor.deal_type === 'cpm') {
-    const cpm = getCpmDealValue(sponsor);
+    const cpm = getCpmSnapshot(sponsor);
     return {
-      amount: cpm.amount ?? 0,
+      amount: cpm.amount || 0,
       label: cpm.label,
-      color: cpm.isPending ? 'var(--orange)' : 'var(--green)'
+      color: cpm.color
     };
   }
   return {
@@ -328,9 +386,14 @@ export default function SponsorsPage() {
             )}
           </div>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowNew(true)}>
-          <Plus size={14} /> New Sponsor
-        </button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <a href="/docs/sponsor-crm" className="btn btn-ghost" style={{ fontSize: 12 }}>
+            📖 View Rules
+          </a>
+          <button className="btn btn-primary" onClick={() => setShowNew(true)}>
+            <Plus size={14} /> New Sponsor
+          </button>
+        </div>
       </div>
 
       {/* Alerts bar */}
@@ -739,32 +802,63 @@ export default function SponsorsPage() {
                           <input type="number" defaultValue={selected.cpm_cap || ''} onBlur={e => updateField(selected.id, 'cpm_cap', parseFloat(e.target.value))} placeholder="e.g. 7000" />
                         </div>
                       </div>
-                      <div className="form-group" style={{ marginBottom: 12 }}>
-                        <label className="form-label">Views at 30 Days</label>
-                        <input type="number" defaultValue={selected.views_at_30_days || ''} onBlur={e => updateField(selected.id, 'views_at_30_days', parseInt(e.target.value) || 0)} placeholder="e.g. 250000" />
+                      <div className="grid-2" style={{ marginBottom: 12 }}>
+                        <div className="form-group">
+                          <label className="form-label">Live Views (Episode)</label>
+                          <div style={{ fontSize: 13, fontWeight: 600 }}>
+                            {(selected.episode_view_count || 0).toLocaleString()}
+                          </div>
+                          <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>
+                            {selected.episode_view_count_updated_at
+                              ? `Updated ${formatFullDate(selected.episode_view_count_updated_at)}`
+                              : 'Update pending'}
+                          </div>
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">Views at 30 Days (Locked)</label>
+                          <input type="number" defaultValue={selected.views_at_30_days || ''} onBlur={e => updateField(selected.id, 'views_at_30_days', parseInt(e.target.value) || 0)} placeholder="e.g. 250000" />
+                        </div>
                       </div>
-                      {/* Calculated Amount */}
+
                       {(() => {
-                        const cpmData = getCpmDealValue(selected);
-                        const views = selected.views_at_30_days || 0;
+                        const cpmSnapshot = getCpmSnapshot(selected);
+                        const liveViews = selected.episode_view_count || 0;
                         const cpmRate = selected.cpm_rate || 0;
                         const cpmCap = selected.cpm_cap || 0;
-                        const rawAmount = views > 0 ? (views / 1000) * cpmRate : 0;
+                        const liveCalc = calcCpmAmount(liveViews, cpmRate, cpmCap);
+                        const lockedViews = selected.views_at_30_days || 0;
+                        const lockedCalc = calcCpmAmount(lockedViews, cpmRate, cpmCap);
+                        const canLock = !!selected.episode_id && liveViews > 0 && lockedViews === 0;
                         return (
                           <div style={{ background: 'var(--bg)', borderRadius: 6, padding: 12, border: '1px solid var(--border)' }}>
-                            {views > 0 ? (
-                              <>
-                                <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 6 }}>
-                                  {views.toLocaleString()} views × ${cpmRate}/1K = ${rawAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })} gross
-                                </div>
-                                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--green)' }}>
-                                  Actual Payment: {cpmData.label}
-                                  {rawAmount > cpmCap && <span style={{ fontSize: 11, color: 'var(--orange)', marginLeft: 8 }}>(capped)</span>}
-                                </div>
-                              </>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                              <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>
+                                {cpmSnapshot.daysLeft === null
+                                  ? 'Publish date needed to lock views'
+                                  : cpmSnapshot.isLocked
+                                    ? 'Views locked'
+                                    : `Locks in ${cpmSnapshot.daysLeft} day${cpmSnapshot.daysLeft === 1 ? '' : 's'}`}
+                              </div>
+                              <button
+                                className="btn btn-secondary"
+                                style={{ padding: '4px 10px', fontSize: 11 }}
+                                disabled={!canLock}
+                                onClick={() => updateField(selected.id, 'views_at_30_days', liveViews)}
+                              >
+                                Lock Views
+                              </button>
+                            </div>
+                            <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 6 }}>
+                              Live estimate: {liveViews.toLocaleString()} views → {formatMoney(liveCalc.net)} net
+                              {liveCalc.hitCap && <span style={{ fontSize: 11, color: 'var(--orange)', marginLeft: 8 }}>(capped)</span>}
+                            </div>
+                            {lockedViews > 0 ? (
+                              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--green)' }}>
+                                Final snapshot: {lockedViews.toLocaleString()} views → {formatMoney(lockedCalc.net)} net
+                              </div>
                             ) : (
                               <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>
-                                Enter views to calculate actual amount. Cap: ${((cpmCap || 0) * 0.8).toLocaleString(undefined, { maximumFractionDigits: 0 })} net
+                                Locked views not set yet.
                               </div>
                             )}
                           </div>

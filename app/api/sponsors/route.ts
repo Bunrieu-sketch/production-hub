@@ -19,10 +19,22 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const stage = searchParams.get('stage');
 
-  let query = 'SELECT * FROM sponsors WHERE 1=1';
+  let query = `
+    SELECT
+      sponsors.*,
+      episodes.view_count as episode_view_count,
+      episodes.view_count_updated_at as episode_view_count_updated_at,
+      episodes.youtube_video_id as episode_youtube_video_id,
+      episodes.thumbnail_url as episode_thumbnail_url,
+      episodes.actual_publish_date as episode_publish_date,
+      episodes.publish_date as episode_target_publish_date
+    FROM sponsors
+    LEFT JOIN episodes ON sponsors.episode_id = episodes.id
+    WHERE 1=1
+  `;
   const params: string[] = [];
-  if (stage) { query += ' AND stage = ?'; params.push(stage); }
-  query += ' ORDER BY created_at DESC';
+  if (stage) { query += ' AND sponsors.stage = ?'; params.push(stage); }
+  query += ' ORDER BY sponsors.created_at DESC';
 
   const rows = db.prepare(query).all(...params);
   return NextResponse.json(rows);

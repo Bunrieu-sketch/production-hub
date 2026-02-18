@@ -93,6 +93,8 @@ function initDb() {
       youtube_video_id TEXT DEFAULT '',
       youtube_url TEXT DEFAULT '',
       view_count INTEGER DEFAULT 0,
+      view_count_updated_at TEXT,
+      thumbnail_url TEXT DEFAULT '',
       thumbnail_concept TEXT DEFAULT '',
       hook TEXT DEFAULT '',
       outline TEXT DEFAULT '',
@@ -214,7 +216,27 @@ function initDb() {
     );
   `);
 
+  migrateEpisodesSchema();
   migrateSponsorsSchema();
+}
+
+function migrateEpisodesSchema() {
+  if (!db) return;
+  const database = db;
+
+  const columns = database.prepare("PRAGMA table_info(episodes)").all() as Array<{ name: string }>;
+  const columnNames = new Set(columns.map(col => col.name));
+
+  const addColumn = (name: string, definition: string) => {
+    if (!columnNames.has(name)) {
+      database.exec(`ALTER TABLE episodes ADD COLUMN ${name} ${definition}`);
+    }
+  };
+
+  addColumn('youtube_video_id', "TEXT DEFAULT ''");
+  addColumn('view_count', 'INTEGER DEFAULT 0');
+  addColumn('view_count_updated_at', 'TEXT');
+  addColumn('thumbnail_url', "TEXT DEFAULT ''");
 }
 
 function migrateSponsorsSchema() {
