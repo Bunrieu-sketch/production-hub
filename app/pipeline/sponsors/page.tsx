@@ -18,6 +18,7 @@ interface Sponsor {
   notes: string; next_action: string; next_action_due: string;
   offer_date: string; contract_date: string; episode_id: number | null;
   cpm_rate: number | null; cpm_cap: number | null; mvg: number | null;
+  views_at_30_days: number;
 }
 
 interface Alert {
@@ -98,6 +99,63 @@ function normalizeSubStatus(stage: string, current?: string | null) {
 
 function daysBetween(a: Date, b: Date) {
   return Math.floor((a.getTime() - b.getTime()) / 86400000);
+}
+
+// Calculate actual CPM deal value based on views
+function getCpmDealValue(sponsor: Sponsor): { amount: number | null; label: string; isPending: boolean } {
+  if (sponsor.deal_type !== 'cpm') {
+    return { amount: sponsor.deal_value_net, label: `$${sponsor.deal_value_net?.toLocaleString(undefined, { maximumFractionDigits: 0 })} net`, isPending: false };
+  }
+  
+  const cpmRate = sponsor.cpm_rate || 0;
+  const cpmCap = sponsor.cpm_cap || 0;
+  const views = sponsor.views_at_30_days || 0;
+  const capNet = cpmCap * 0.8; // 20% agency commission
+  
+  // If views recorded, calculate actual amount
+  if (views > 0) {
+    const grossAmount = Math.min((views / 1000) * cpmRate, cpmCap);
+    const netAmount = grossAmount * 0.8;
+    const hitCap = (views / 1000) * cpmRate >= cpmCap;
+    return { 
+      amount: netAmount, 
+      label: `$${netAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })} net${hitCap ? ' (cap)' : ''}`,
+      isPending: false 
+    };
+  }
+  
+  // If published but no views recorded yet (within 30 day window)
+  if (['published', 'invoiced', 'paid'].includes(sponsor.stage)) {
+    return { 
+      amount: null, 
+      label: `Pending (cap: $${capNet.toLocaleString(undefined, { maximumFractionDigits: 0 })})`,
+      isPending: true 
+    };
+  }
+  
+  // Not yet published - show cap as potential max
+  return { 
+    amount: capNet, 
+    label: `Cap: $${capNet.toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
+    isPending: true 
+  };
+}
+
+// Get display value for a sponsor (handles both flat rate and CPM)
+function getDisplayValue(sponsor: Sponsor): { amount: number; label: string; color: string } {
+  if (sponsor.deal_type === 'cpm') {
+    const cpm = getCpmDealValue(sponsor);
+    return {
+      amount: cpm.amount ?? 0,
+      label: cpm.label,
+      color: cpm.isPending ? 'var(--orange)' : 'var(--green)'
+    };
+  }
+  return {
+    amount: sponsor.deal_value_net || 0,
+    label: `$${(sponsor.deal_value_net || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })} net`,
+    color: 'var(--green)'
+  };
 }
 
 function ContentProgress({ subStatus }: { subStatus: string | null }) {
@@ -235,8 +293,14 @@ export default function SponsorsPage() {
     load();
   };
 
-  const pipelineValue = sponsors.filter(s => s.stage !== 'paid').reduce((acc, s) => acc + (s.deal_value_net || 0), 0);
-  const paidYTD = sponsors.filter(s => s.stage === 'paid').reduce((acc, s) => acc + (s.deal_value_net || 0), 0);
+  const pipelineValue = sponsors.filter(s => s.stage !== 'paid').reduce((acc, s) => {
+    const display = getDisplayValue(s);
+    return acc + display.amount;
+  }, 0);
+  const paidYTD = sponsors.filter(s => s.stage === 'paid').reduce((acc, s) => {
+    const display = getDisplayValue(s);
+    return acc + display.amount;
+  }, 0);
   const overdueCount = alerts.filter(a => a.severity === 'red').length;
 
   return (
@@ -301,7 +365,7 @@ export default function SponsorsPage() {
         {STAGES.map(stage => {
           const stageSponsors = sponsors.filter(s => s.stage === stage.key);
           const isOver = dragOver === stage.key;
-          const stageValue = stageSponsors.reduce((acc, s) => acc + (s.deal_value_net || 0), 0);
+          const stageValue = stageSponsors.reduce((acc, s) => acc + getDisplayValue(s).amount, 0);
           return (
             <div
               key={stage.key}
@@ -349,11 +413,14 @@ export default function SponsorsPage() {
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; }}
                   >
                     <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{sp.brand_name}</div>
-                    {sp.deal_value_net > 0 && (
-                      <div style={{ fontSize: 11, color: 'var(--green)', marginBottom: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
-                        <DollarSign size={9} /> ${sp.deal_value_net.toLocaleString(undefined, { maximumFractionDigits: 0 })} net
-                      </div>
-                    )}
+                    {(() => {
+                      const display = getDisplayValue(sp);
+                      return display.amount > 0 || sp.deal_type === 'cpm' ? (
+                        <div style={{ fontSize: 11, color: display.color, marginBottom: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
+                          <DollarSign size={9} /> {display.label}
+                        </div>
+                      ) : null;
+                    })()}
                     {sp.deal_type !== 'flat_rate' && (
                       <div style={{ fontSize: 10, color: 'var(--accent)', marginBottom: 3, fontWeight: 600 }}>
                         {sp.deal_type.toUpperCase().replace('_', ' ')}
@@ -653,6 +720,58 @@ export default function SponsorsPage() {
                       </div>
                     );
                   })()}
+
+                  {/* CPM Deal Calculator */}
+                  {selected.deal_type === 'cpm' && (
+                    <div style={{
+                      background: 'rgba(163,113,247,0.05)',
+                      border: '1px solid var(--accent)',
+                      borderRadius: 8, padding: 16,
+                    }}>
+                      <div className="section-label" style={{ marginBottom: 12, color: 'var(--accent)' }}>CPM Deal Calculator</div>
+                      <div className="grid-2" style={{ marginBottom: 12 }}>
+                        <div className="form-group">
+                          <label className="form-label">CPM Rate ($)</label>
+                          <input type="number" step="0.01" defaultValue={selected.cpm_rate || ''} onBlur={e => updateField(selected.id, 'cpm_rate', parseFloat(e.target.value))} placeholder="e.g. 17.50" />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">CPM Cap (Gross $)</label>
+                          <input type="number" defaultValue={selected.cpm_cap || ''} onBlur={e => updateField(selected.id, 'cpm_cap', parseFloat(e.target.value))} placeholder="e.g. 7000" />
+                        </div>
+                      </div>
+                      <div className="form-group" style={{ marginBottom: 12 }}>
+                        <label className="form-label">Views at 30 Days</label>
+                        <input type="number" defaultValue={selected.views_at_30_days || ''} onBlur={e => updateField(selected.id, 'views_at_30_days', parseInt(e.target.value) || 0)} placeholder="e.g. 250000" />
+                      </div>
+                      {/* Calculated Amount */}
+                      {(() => {
+                        const cpmData = getCpmDealValue(selected);
+                        const views = selected.views_at_30_days || 0;
+                        const cpmRate = selected.cpm_rate || 0;
+                        const cpmCap = selected.cpm_cap || 0;
+                        const rawAmount = views > 0 ? (views / 1000) * cpmRate : 0;
+                        return (
+                          <div style={{ background: 'var(--bg)', borderRadius: 6, padding: 12, border: '1px solid var(--border)' }}>
+                            {views > 0 ? (
+                              <>
+                                <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 6 }}>
+                                  {views.toLocaleString()} views × ${cpmRate}/1K = ${rawAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })} gross
+                                </div>
+                                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--green)' }}>
+                                  Actual Payment: {cpmData.label}
+                                  {rawAmount > cpmCap && <span style={{ fontSize: 11, color: 'var(--orange)', marginLeft: 8 }}>(capped)</span>}
+                                </div>
+                              </>
+                            ) : (
+                              <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>
+                                Enter views to calculate actual amount. Cap: ${((cpmCap || 0) * 0.8).toLocaleString(undefined, { maximumFractionDigits: 0 })} net
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
 
                   <div className="grid-2">
                     <div className="form-group">
