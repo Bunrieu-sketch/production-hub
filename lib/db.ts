@@ -214,6 +214,29 @@ function initDb() {
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
     );
+
+    -- ── Media kit config ────────────────────────────────────────────────
+    CREATE TABLE IF NOT EXISTS media_kit_config (
+      id INTEGER PRIMARY KEY DEFAULT 1,
+      youtube_handle TEXT DEFAULT '@Andrew_Fraser',
+      channel_name TEXT DEFAULT 'Andrew Fraser',
+      subscriber_count INTEGER DEFAULT 190000,
+      avg_views_per_video INTEGER DEFAULT 80000,
+      avg_engagement_rate REAL DEFAULT 4.2,
+      niche_description TEXT DEFAULT 'Extreme travel, street food & cultural documentaries from Southeast Asia and beyond.',
+      content_pillars TEXT DEFAULT '["Extreme Food","Travel Documentaries","Street Culture","Adventure Vlogs"]',
+      audience_age_range TEXT DEFAULT '18-34',
+      audience_gender_split TEXT DEFAULT '{"male": 68, "female": 32}',
+      audience_top_geos TEXT DEFAULT '["United States","United Kingdom","Australia","Canada","Vietnam"]',
+      posting_frequency TEXT DEFAULT '2-3 videos/month',
+      channel_url TEXT DEFAULT 'https://youtube.com/@Andrew_Fraser',
+      instagram_handle TEXT DEFAULT '@andrewfraser',
+      tiktok_handle TEXT DEFAULT '',
+      contact_email TEXT DEFAULT 'andrew@fraser.vn',
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
+
+    INSERT OR IGNORE INTO media_kit_config (id) VALUES (1);
   `);
 
   migrateEpisodesSchema();
@@ -511,4 +534,99 @@ export function getStats() {
 export function getActivity(): Activity[] {
   const database = getDb();
   return database.prepare('SELECT * FROM activity_log ORDER BY created_at DESC LIMIT 20').all() as Activity[];
+}
+
+// ── Media kit helpers ────────────────────────────────────────────────────
+
+export interface MediaKitConfig {
+  id: number;
+  youtube_handle: string;
+  channel_name: string;
+  subscriber_count: number;
+  avg_views_per_video: number;
+  avg_engagement_rate: number;
+  niche_description: string;
+  content_pillars: string;
+  audience_age_range: string;
+  audience_gender_split: string;
+  audience_top_geos: string;
+  posting_frequency: string;
+  channel_url: string;
+  instagram_handle: string;
+  tiktok_handle: string;
+  contact_email: string;
+  updated_at: string;
+}
+
+export interface MediaKitStats {
+  total_sponsors: number;
+  total_revenue: number;
+  avg_deal_value: number;
+  top_brands: string[];
+}
+
+export function getMediaKitConfig(): MediaKitConfig {
+  const database = getDb();
+  const row = database.prepare('SELECT * FROM media_kit_config WHERE id = 1').get() as MediaKitConfig | undefined;
+  if (row) return row;
+  database.prepare('INSERT OR IGNORE INTO media_kit_config (id) VALUES (1)').run();
+  return database.prepare('SELECT * FROM media_kit_config WHERE id = 1').get() as MediaKitConfig;
+}
+
+export function updateMediaKitConfig(data: Partial<MediaKitConfig>): MediaKitConfig {
+  const database = getDb();
+  const fields = [
+    'youtube_handle', 'channel_name', 'subscriber_count', 'avg_views_per_video',
+    'avg_engagement_rate', 'niche_description', 'content_pillars', 'audience_age_range',
+    'audience_gender_split', 'audience_top_geos', 'posting_frequency', 'channel_url',
+    'instagram_handle', 'tiktok_handle', 'contact_email',
+  ];
+  const updates: string[] = [];
+  const values: unknown[] = [];
+
+  for (const field of fields) {
+    if (field in data) {
+      updates.push(`${field} = ?`);
+      values.push((data as Record<string, unknown>)[field]);
+    }
+  }
+
+  if (!updates.length) return getMediaKitConfig();
+
+  updates.push('updated_at = ?');
+  values.push(new Date().toISOString());
+  values.push(1);
+
+  database.prepare(`UPDATE media_kit_config SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+  return getMediaKitConfig();
+}
+
+export function getMediaKitStats(): MediaKitStats {
+  const database = getDb();
+  const summary = database.prepare(`
+    SELECT
+      COUNT(*) as count,
+      COALESCE(SUM(deal_value_gross), 0) as total
+    FROM sponsors
+    WHERE stage = 'published'
+  `).get() as { count: number; total: number };
+
+  const top = database.prepare(`
+    SELECT brand_name
+    FROM sponsors
+    WHERE stage = 'published' AND brand_name != ''
+    ORDER BY deal_value_gross DESC
+    LIMIT 12
+  `).all() as Array<{ brand_name: string }>;
+
+  const totalSponsors = summary?.count || 0;
+  const totalRevenue = summary?.total || 0;
+  const avgDealValue = totalSponsors ? totalRevenue / totalSponsors : 0;
+
+  return {
+    total_sponsors: totalSponsors,
+    total_revenue: totalRevenue,
+    avg_deal_value: avgDealValue,
+    top_brands: top.map(row => row.brand_name),
+  };
 }

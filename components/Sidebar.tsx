@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutGrid, Kanban, FileText, Search, Palette,
   GanttChart, Calendar, Clapperboard, Video,
-  HandCoins, Users, ChevronDown, ChevronRight,
+  HandCoins, Users, Sparkles, ChevronDown, ChevronRight,
   ExternalLink,
 } from 'lucide-react';
 
@@ -40,6 +40,7 @@ export function Sidebar() {
       items: [
         { href: '/pipeline/sponsors', icon: <HandCoins size={16} />, label: 'Sponsors' },
         { href: '/pipeline/people', icon: <Users size={16} />, label: 'People' },
+        { href: '/media-kit', icon: <Sparkles size={16} />, label: 'Media Kit' },
       ],
     },
   ];
