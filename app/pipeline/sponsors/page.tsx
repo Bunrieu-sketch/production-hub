@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, DollarSign, Calendar, AlertCircle, X, ChevronRight } from 'lucide-react';
+import { Plus, DollarSign, X, ChevronRight } from 'lucide-react';
 
 interface Sponsor {
-  id: number; brand_name: string; stage: string;
+  id: number; brand_name: string; stage: string; sub_status: string | null;
   deal_value_gross: number; deal_value_net: number; deal_type: string;
   contact_name: string; contact_email: string;
   agency_name: string; agency_contact: string;
@@ -25,19 +25,37 @@ interface Alert {
   sponsorId: number; brandName: string;
 }
 
+interface NewSponsorForm {
+  brand_name: string;
+  deal_type: string;
+  deal_value_gross: string;
+  stage: string;
+  sub_status: string | null;
+  contact_name: string;
+  agency_name: string;
+}
+
 const STAGES = [
-  { key: 'inquiry', label: 'Inquiry', color: '#8b949e' },
-  { key: 'negotiation', label: 'Negotiation', color: 'var(--blue)' },
-  { key: 'contract', label: 'Contract', color: 'var(--blue)' },
-  { key: 'brief_received', label: 'Brief Received', color: 'var(--accent)' },
-  { key: 'script_writing', label: 'Script Writing', color: 'var(--orange)' },
-  { key: 'script_submitted', label: 'Script Submitted', color: 'var(--orange)' },
-  { key: 'script_approved', label: 'Script Approved', color: 'var(--green)' },
-  { key: 'filming', label: 'Filming', color: 'var(--accent)' },
-  { key: 'brand_review', label: 'Brand Review', color: 'var(--orange)' },
-  { key: 'live', label: 'Live', color: 'var(--green)' },
+  { key: 'leads', label: 'Leads', color: '#8b949e' },
+  { key: 'contracted', label: 'Contracted', color: 'var(--blue)' },
+  { key: 'content', label: 'Content', color: 'var(--orange)' },
+  { key: 'published', label: 'Published', color: 'var(--green)' },
   { key: 'invoiced', label: 'Invoiced', color: 'var(--blue)' },
   { key: 'paid', label: 'Paid', color: 'var(--green)' },
+];
+
+const LEAD_SUB_STATUSES = [
+  { key: 'inquiry', label: 'Inquiry' },
+  { key: 'negotiation', label: 'Negotiation' },
+];
+
+const CONTENT_STEPS = [
+  { key: 'brief_received', label: 'Brief Received' },
+  { key: 'script_writing', label: 'Script Writing' },
+  { key: 'script_submitted', label: 'Script Submitted' },
+  { key: 'script_approved', label: 'Script Approved' },
+  { key: 'filming', label: 'Filming' },
+  { key: 'brand_review', label: 'Brand Review' },
 ];
 
 const SCRIPT_STATUSES = ['not_started', 'drafting', 'submitted', 'revision_1', 'revision_2', 'revision_3', 'approved'];
@@ -47,8 +65,63 @@ function formatDate(d: string) {
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function isOverdue(d: string) {
-  return d && new Date(d) < new Date();
+function formatFullDate(d: string) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function getContentStepIndex(subStatus: string | null) {
+  const idx = CONTENT_STEPS.findIndex(step => step.key === subStatus);
+  return idx >= 0 ? idx : 0;
+}
+
+function formatSubStatus(subStatus: string | null, stage: string) {
+  if (!subStatus) return stage === 'content' ? CONTENT_STEPS[0].label : '—';
+  const lead = LEAD_SUB_STATUSES.find(s => s.key === subStatus);
+  if (lead) return lead.label;
+  const content = CONTENT_STEPS.find(s => s.key === subStatus);
+  if (content) return content.label;
+  return subStatus.replace(/_/g, ' ');
+}
+
+function normalizeSubStatus(stage: string, current?: string | null) {
+  if (stage === 'leads') {
+    const leadKeys = LEAD_SUB_STATUSES.map(s => s.key);
+    return leadKeys.includes(current ?? '') ? (current ?? 'inquiry') : 'inquiry';
+  }
+  if (stage === 'content') {
+    const contentKeys = CONTENT_STEPS.map(s => s.key);
+    return contentKeys.includes(current ?? '') ? (current ?? 'brief_received') : 'brief_received';
+  }
+  return null;
+}
+
+function daysBetween(a: Date, b: Date) {
+  return Math.floor((a.getTime() - b.getTime()) / 86400000);
+}
+
+function ContentProgress({ subStatus }: { subStatus: string | null }) {
+  const index = getContentStepIndex(subStatus);
+  const label = CONTENT_STEPS[index]?.label || CONTENT_STEPS[0].label;
+  return (
+    <div style={{ marginTop: 6 }}>
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+        {CONTENT_STEPS.map((step, i) => (
+          <span
+            key={step.key}
+            style={{
+              width: 7,
+              height: 7,
+              borderRadius: '50%',
+              background: i === index ? 'var(--accent)' : 'var(--border)',
+              boxShadow: i === index ? '0 0 0 2px rgba(163,113,247,0.25)' : 'none',
+            }}
+          />
+        ))}
+      </div>
+      <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 4 }}>{label}</div>
+    </div>
+  );
 }
 
 function calcPaymentBreakdown(sponsor: Sponsor) {
@@ -71,7 +144,15 @@ export default function SponsorsPage() {
   const [dragOver, setDragOver] = useState<string | null>(null);
   const [showNew, setShowNew] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [newForm, setNewForm] = useState({ brand_name: '', deal_type: 'flat_rate', deal_value_gross: '', stage: 'inquiry', contact_name: '', agency_name: '' });
+  const [newForm, setNewForm] = useState<NewSponsorForm>({
+    brand_name: '',
+    deal_type: 'flat_rate',
+    deal_value_gross: '',
+    stage: 'leads',
+    sub_status: 'inquiry',
+    contact_name: '',
+    agency_name: '',
+  });
 
   const load = () => {
     fetch('/api/sponsors').then(r => r.json()).then(setSponsors);
@@ -89,13 +170,15 @@ export default function SponsorsPage() {
 
   const handleDrop = async (stage: string) => {
     if (dragging === null) return;
+    const sponsor = sponsors.find(s => s.id === dragging) || null;
+    const nextSubStatus = normalizeSubStatus(stage, sponsor?.sub_status || null);
     await fetch(`/api/sponsors/${dragging}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ stage }),
+      body: JSON.stringify({ stage, sub_status: nextSubStatus }),
     });
-    setSponsors(prev => prev.map(s => s.id === dragging ? { ...s, stage } : s));
-    if (selected?.id === dragging) setSelected(prev => prev ? { ...prev, stage } : prev);
+    setSponsors(prev => prev.map(s => s.id === dragging ? { ...s, stage, sub_status: nextSubStatus } : s));
+    if (selected?.id === dragging) setSelected(prev => prev ? { ...prev, stage, sub_status: nextSubStatus } : prev);
     setDragging(null);
     setDragOver(null);
     fetch('/api/sponsors/alerts').then(r => r.json()).then(setAlerts);
@@ -113,16 +196,42 @@ export default function SponsorsPage() {
     fetch('/api/sponsors/alerts').then(r => r.json()).then(setAlerts);
   };
 
+  const updateStage = async (id: number, stage: string) => {
+    const sub_status = normalizeSubStatus(stage, selected?.sub_status || null);
+    setSaving(true);
+    await fetch(`/api/sponsors/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stage, sub_status }),
+    });
+    setSaving(false);
+    refreshSelected(id);
+    fetch('/api/sponsors/alerts').then(r => r.json()).then(setAlerts);
+  };
+
   const createSponsor = async () => {
     if (!newForm.brand_name) return;
     const gross = parseFloat(newForm.deal_value_gross) || 0;
     await fetch('/api/sponsors', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...newForm, deal_value_gross: gross, deal_value_net: gross * 0.8 }),
+      body: JSON.stringify({
+        ...newForm,
+        deal_value_gross: gross,
+        deal_value_net: gross * 0.8,
+        sub_status: normalizeSubStatus(newForm.stage, newForm.sub_status),
+      }),
     });
     setShowNew(false);
-    setNewForm({ brand_name: '', deal_type: 'flat_rate', deal_value_gross: '', stage: 'inquiry', contact_name: '', agency_name: '' });
+    setNewForm({
+      brand_name: '',
+      deal_type: 'flat_rate',
+      deal_value_gross: '',
+      stage: 'leads',
+      sub_status: 'inquiry',
+      contact_name: '',
+      agency_name: '',
+    });
     load();
   };
 
@@ -188,7 +297,7 @@ export default function SponsorsPage() {
       )}
 
       {/* Kanban */}
-      <div style={{ display: 'flex', gap: 8, overflowX: 'auto', flex: 1, paddingBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: 10, flex: 1, paddingBottom: 16, overflow: 'hidden' }}>
         {STAGES.map(stage => {
           const stageSponsors = sponsors.filter(s => s.stage === stage.key);
           const isOver = dragOver === stage.key;
@@ -198,7 +307,7 @@ export default function SponsorsPage() {
               key={stage.key}
               className="kanban-col"
               style={{
-                minWidth: 190, maxWidth: 215, flex: '0 0 200px',
+                minWidth: 0,
                 background: isOver ? 'rgba(163,113,247,0.05)' : 'var(--card)',
                 borderColor: isOver ? 'var(--accent)' : 'var(--border)',
                 transition: 'border-color 0.15s',
@@ -250,16 +359,44 @@ export default function SponsorsPage() {
                         {sp.deal_type.toUpperCase().replace('_', ' ')}
                       </div>
                     )}
-                    {sp.script_due && (
-                      <div style={{ fontSize: 10, display: 'flex', alignItems: 'center', gap: 3, color: isOverdue(sp.script_due) ? 'var(--red)' : 'var(--text-dim)' }}>
-                        {isOverdue(sp.script_due) && <AlertCircle size={9} />}
-                        <Calendar size={9} /> Script: {formatDate(sp.script_due)}
+                    {stage.key === 'leads' && (
+                      <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 4 }}>
+                        <span style={{ padding: '2px 6px', borderRadius: 8, background: 'var(--border)', color: 'var(--text)' }}>
+                          {formatSubStatus(sp.sub_status, stage.key)}
+                        </span>
                       </div>
                     )}
-                    {sp.payment_due_date && !sp.payment_received_date && (
-                      <div style={{ fontSize: 10, color: isOverdue(sp.payment_due_date) ? 'var(--red)' : 'var(--text-dim)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 3 }}>
-                        {isOverdue(sp.payment_due_date) && <AlertCircle size={9} />}
-                        <DollarSign size={9} /> Pay: {formatDate(sp.payment_due_date)}
+                    {stage.key === 'content' && (
+                      <ContentProgress subStatus={sp.sub_status} />
+                    )}
+                    {stage.key === 'published' && (
+                      <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 4 }}>
+                        {sp.live_date ? (() => {
+                          const days = daysBetween(new Date(), new Date(sp.live_date));
+                          if (days === 0) return 'Published today';
+                          if (days > 0) return `Published ${days} day${days === 1 ? '' : 's'} ago`;
+                          const ahead = Math.abs(days);
+                          return `Publishes in ${ahead} day${ahead === 1 ? '' : 's'}`;
+                        })() : 'Publish date TBD'}
+                      </div>
+                    )}
+                    {stage.key === 'invoiced' && (
+                      <div style={{ fontSize: 10, marginTop: 4, color: sp.payment_due_date ? (() => {
+                        const days = daysBetween(new Date(sp.payment_due_date), new Date());
+                        return days < 0 ? 'var(--red)' : 'var(--text-dim)';
+                      })() : 'var(--text-dim)' }}>
+                        {sp.payment_due_date ? (() => {
+                          const days = daysBetween(new Date(sp.payment_due_date), new Date());
+                          if (days === 0) return 'Due today';
+                          if (days > 0) return `Due in ${days} day${days === 1 ? '' : 's'}`;
+                          const overdue = Math.abs(days);
+                          return `OVERDUE ${overdue} day${overdue === 1 ? '' : 's'}`;
+                        })() : 'Due date TBD'}
+                      </div>
+                    )}
+                    {stage.key === 'paid' && (
+                      <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 4 }}>
+                        {sp.payment_received_date ? `Paid ${formatFullDate(sp.payment_received_date)}` : 'Payment date TBD'}
                       </div>
                     )}
                   </div>
@@ -360,10 +497,24 @@ export default function SponsorsPage() {
 
                   <div className="form-group">
                     <label className="form-label">Move Stage</label>
-                    <select value={selected.stage} onChange={e => updateField(selected.id, 'stage', e.target.value).then(() => refreshSelected(selected.id))}>
+                    <select value={selected.stage} onChange={e => updateStage(selected.id, e.target.value)}>
                       {STAGES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
                     </select>
                   </div>
+
+                  {(selected.stage === 'leads' || selected.stage === 'content') && (
+                    <div className="form-group">
+                      <label className="form-label">Stage Progress</label>
+                      <select
+                        value={normalizeSubStatus(selected.stage, selected.sub_status) || ''}
+                        onChange={e => updateField(selected.id, 'sub_status', e.target.value)}
+                      >
+                        {(selected.stage === 'leads' ? LEAD_SUB_STATUSES : CONTENT_STEPS).map(step => (
+                          <option key={step.key} value={step.key}>{step.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   <div className="form-group">
                     <label className="form-label">Next Action</label>
@@ -573,7 +724,13 @@ export default function SponsorsPage() {
               </div>
               <div className="form-group">
                 <label className="form-label">Stage</label>
-                <select value={newForm.stage} onChange={e => setNewForm(f => ({ ...f, stage: e.target.value }))}>
+                <select
+                  value={newForm.stage}
+                  onChange={e => {
+                    const stage = e.target.value;
+                    setNewForm(f => ({ ...f, stage, sub_status: normalizeSubStatus(stage, f.sub_status) }));
+                  }}
+                >
                   {STAGES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
                 </select>
               </div>

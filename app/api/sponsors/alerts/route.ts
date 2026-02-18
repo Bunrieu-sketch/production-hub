@@ -15,7 +15,7 @@ export async function GET() {
   const todayStr = today.toISOString().split('T')[0];
 
   const sponsors = db.prepare(`
-    SELECT id, brand_name, stage,
+    SELECT id, brand_name, stage, sub_status,
       script_due, live_date, invoice_date,
       payment_due_date, payment_received_date,
       payment_terms_brand_days, payment_terms_agency_days,
@@ -27,6 +27,7 @@ export async function GET() {
     id: number;
     brand_name: string;
     stage: string;
+    sub_status: string | null;
     script_due: string | null;
     live_date: string | null;
     invoice_date: string | null;
@@ -60,7 +61,7 @@ export async function GET() {
     }
 
     // Script due soon (within 3 days)
-    if (sp.script_due && sp.stage !== 'script_approved') {
+    if (sp.script_due && sp.stage === 'content' && ['brief_received', 'script_writing', 'script_submitted'].includes(sp.sub_status || '')) {
       const due = new Date(sp.script_due);
       const daysUntil = Math.floor((due.getTime() - today.getTime()) / 86400000);
       if (daysUntil >= 0 && daysUntil <= 3) {
@@ -83,7 +84,7 @@ export async function GET() {
     }
 
     // CPM 30-day period ending (within 5 days of 30 days after publish)
-    if (sp.deal_type === 'cpm' && sp.published_date && sp.stage === 'live') {
+    if (sp.deal_type === 'cpm' && sp.published_date && sp.stage === 'published') {
       const publishDate = new Date(sp.published_date);
       const thirtyDayMark = new Date(publishDate.getTime() + 30 * 86400000);
       const daysUntil = Math.floor((thirtyDayMark.getTime() - today.getTime()) / 86400000);

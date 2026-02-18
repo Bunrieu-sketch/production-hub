@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 
+const LEAD_SUB_STATUSES = ['inquiry', 'negotiation'];
+const CONTENT_SUB_STATUSES = ['brief_received', 'script_writing', 'script_submitted', 'script_approved', 'filming', 'brand_review'];
+
+function normalizeSubStatus(stage: string, subStatus?: string | null) {
+  if (stage === 'leads') {
+    return LEAD_SUB_STATUSES.includes(subStatus || '') ? subStatus : 'inquiry';
+  }
+  if (stage === 'content') {
+    return CONTENT_SUB_STATUSES.includes(subStatus || '') ? subStatus : 'brief_received';
+  }
+  return null;
+}
+
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const db = getDb();
@@ -13,10 +26,22 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const { id } = await params;
   const db = getDb();
   const body = await req.json();
+  const hasStage = 'stage' in body;
+  const hasSubStatus = 'sub_status' in body;
+
+  if (hasStage || hasSubStatus) {
+    const current = db.prepare('SELECT stage, sub_status FROM sponsors WHERE id = ?').get(id) as { stage?: string; sub_status?: string | null } | undefined;
+    const stage = hasStage ? body.stage : current?.stage || 'leads';
+    if (hasSubStatus) {
+      body.sub_status = normalizeSubStatus(stage, body.sub_status);
+    } else if (hasStage) {
+      body.sub_status = normalizeSubStatus(stage, current?.sub_status);
+    }
+  }
 
   const fields = [
     'brand_name', 'deal_type', 'deal_value_gross', 'deal_value_net',
-    'cpm_rate', 'cpm_cap', 'mvg', 'stage',
+    'cpm_rate', 'cpm_cap', 'mvg', 'stage', 'sub_status',
     'contact_name', 'contact_email', 'agency_name', 'agency_contact',
     'offer_date', 'contract_date', 'brief_due', 'brief_received_date',
     'script_due', 'film_by', 'rough_cut_due', 'brand_review_due',

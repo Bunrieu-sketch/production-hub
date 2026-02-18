@@ -142,11 +142,10 @@ function initDb() {
       cpm_cap REAL,
       mvg INTEGER,
 
-      stage TEXT DEFAULT 'inquiry' CHECK(stage IN (
-        'inquiry', 'negotiation', 'contract', 'brief_received',
-        'script_writing', 'script_submitted', 'script_approved',
-        'filming', 'brand_review', 'live', 'invoiced', 'paid'
+      stage TEXT DEFAULT 'leads' CHECK(stage IN (
+        'leads', 'contracted', 'content', 'published', 'invoiced', 'paid'
       )),
+      sub_status TEXT,
 
       contact_name TEXT DEFAULT '',
       contact_email TEXT DEFAULT '',
@@ -214,6 +213,150 @@ function initDb() {
       updated_at TEXT DEFAULT (datetime('now'))
     );
   `);
+
+  migrateSponsorsSchema();
+}
+
+function migrateSponsorsSchema() {
+  if (!db) return;
+
+  const table = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='sponsors'").get() as { sql?: string } | undefined;
+  if (!table?.sql) return;
+
+  const columns = db.prepare("PRAGMA table_info(sponsors)").all() as Array<{ name: string }>;
+  const columnNames = new Set(columns.map(col => col.name));
+  const hasSubStatus = columnNames.has('sub_status');
+  const newStages = ['leads', 'contracted', 'content', 'published', 'invoiced', 'paid'];
+  const hasNewStageCheck = newStages.every(stage => table.sql?.includes(`'${stage}'`));
+
+  if (hasSubStatus && hasNewStageCheck) return;
+
+  const stageCase = `
+    CASE
+      WHEN stage IN ('inquiry', 'negotiation') THEN 'leads'
+      WHEN stage = 'contract' THEN 'contracted'
+      WHEN stage IN ('brief_received', 'script_writing', 'script_submitted', 'script_approved', 'filming', 'brand_review') THEN 'content'
+      WHEN stage = 'live' THEN 'published'
+      WHEN stage IN ('invoiced', 'paid', 'leads', 'contracted', 'content', 'published') THEN stage
+      ELSE stage
+    END
+  `;
+
+  const subStatusCase = `
+    CASE
+      WHEN stage IN ('inquiry', 'negotiation') THEN stage
+      WHEN stage IN ('brief_received', 'script_writing', 'script_submitted', 'script_approved', 'filming', 'brand_review') THEN stage
+      WHEN stage = 'content' THEN ${hasSubStatus ? 'sub_status' : 'NULL'}
+      WHEN stage = 'leads' THEN ${hasSubStatus ? 'sub_status' : 'NULL'}
+      ELSE NULL
+    END
+  `;
+
+  db.exec('BEGIN');
+  try {
+    db.exec(`
+      CREATE TABLE sponsors_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        brand_name TEXT NOT NULL,
+
+        deal_type TEXT DEFAULT 'flat_rate' CHECK(deal_type IN ('flat_rate', 'cpm', 'full_video')),
+        deal_value_gross REAL DEFAULT 0,
+        deal_value_net REAL DEFAULT 0,
+        cpm_rate REAL,
+        cpm_cap REAL,
+        mvg INTEGER,
+
+        stage TEXT DEFAULT 'leads' CHECK(stage IN (
+          'leads', 'contracted', 'content', 'published', 'invoiced', 'paid'
+        )),
+        sub_status TEXT,
+
+        contact_name TEXT DEFAULT '',
+        contact_email TEXT DEFAULT '',
+        agency_name TEXT DEFAULT '',
+        agency_contact TEXT DEFAULT '',
+
+        offer_date TEXT,
+        contract_date TEXT,
+        brief_due TEXT,
+        brief_received_date TEXT,
+        script_due TEXT,
+        film_by TEXT,
+        rough_cut_due TEXT,
+        brand_review_due TEXT,
+        live_date TEXT,
+        invoice_date TEXT,
+        payment_due_date TEXT,
+        payment_received_date TEXT,
+
+        payment_terms_brand_days INTEGER DEFAULT 30,
+        payment_terms_agency_days INTEGER DEFAULT 15,
+        invoice_amount REAL DEFAULT 0,
+
+        placement TEXT DEFAULT 'first_5_min',
+        integration_length_seconds INTEGER DEFAULT 60,
+        brief_text TEXT DEFAULT '',
+        brief_link TEXT DEFAULT '',
+        script_draft TEXT DEFAULT '',
+        script_status TEXT DEFAULT 'not_started' CHECK(script_status IN (
+          'not_started', 'drafting', 'submitted', 'revision_1', 'revision_2', 'revision_3', 'approved'
+        )),
+
+        has_tracking_link INTEGER DEFAULT 0,
+        has_pinned_comment INTEGER DEFAULT 0,
+        has_qr_code INTEGER DEFAULT 0,
+        tracking_link TEXT DEFAULT '',
+        promo_code TEXT DEFAULT '',
+
+        youtube_video_id TEXT DEFAULT '',
+        youtube_video_title TEXT DEFAULT '',
+        views_at_30_days INTEGER DEFAULT 0,
+
+        cpm_screenshot_taken INTEGER DEFAULT 0,
+        cpm_invoice_generated INTEGER DEFAULT 0,
+
+        mvg_met INTEGER,
+        make_good_required INTEGER DEFAULT 0,
+        make_good_video_id TEXT DEFAULT '',
+
+        exclusivity_window_days INTEGER DEFAULT 0,
+        exclusivity_category TEXT DEFAULT '',
+
+        requires_product INTEGER DEFAULT 0,
+        product_ordered_date TEXT,
+        product_ship_to TEXT DEFAULT '',
+        product_received INTEGER DEFAULT 0,
+
+        episode_id INTEGER REFERENCES episodes(id) ON DELETE SET NULL,
+
+        notes TEXT DEFAULT '',
+        next_action TEXT DEFAULT '',
+        next_action_due TEXT,
+
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
+    `);
+
+    const existingColumns = Array.from(columnNames);
+    const baseColumns = existingColumns.filter(col => col !== 'stage' && col !== 'sub_status');
+    const selectColumns = baseColumns.map(col => `"${col}"`);
+    selectColumns.unshift(stageCase.trim());
+    selectColumns.splice(1, 0, subStatusCase.trim());
+    const insertColumns = ['stage', 'sub_status', ...baseColumns].map(col => `"${col}"`);
+
+    db.prepare(`
+      INSERT INTO sponsors_new (${insertColumns.join(', ')})
+      SELECT ${selectColumns.join(', ')} FROM sponsors
+    `).run();
+
+    db.exec('DROP TABLE sponsors');
+    db.exec('ALTER TABLE sponsors_new RENAME TO sponsors');
+    db.exec('COMMIT');
+  } catch (err) {
+    db.exec('ROLLBACK');
+    throw err;
+  }
 }
 
 // ── Migration helpers ──────────────────────────────────────────────────────
