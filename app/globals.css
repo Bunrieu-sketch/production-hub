@@ -836,6 +836,38 @@ textarea {
   color: var(--text-dim);
 }
 
+.docs-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.filter-button {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.filter-button:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.filter-button.active {
+  background: rgba(163, 113, 247, 0.15);
+  color: var(--accent);
+  border-color: rgba(163, 113, 247, 0.4);
+}
+
 .docs-tree {
   flex: 1;
   overflow-y: auto;
@@ -876,6 +908,18 @@ textarea {
   padding-left: 8px;
 }
 
+.doc-date-group {
+  margin-bottom: 8px;
+}
+
+.doc-date-header {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-dim);
+  padding: 6px 12px;
+}
+
 .doc-item {
   display: flex;
   align-items: center;
@@ -898,11 +942,24 @@ textarea {
   color: var(--accent);
 }
 
+.doc-item.focused {
+  outline: 1px solid rgba(163, 113, 247, 0.45);
+  outline-offset: 0;
+}
+
 .doc-icon {
   width: 14px;
   height: 14px;
   color: var(--text-dim);
   flex-shrink: 0;
+}
+
+.doc-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
 }
 
 .doc-name {
@@ -912,6 +969,21 @@ textarea {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.doc-snippet {
+  font-size: 11px;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doc-highlight {
+  background: rgba(163, 113, 247, 0.25);
+  color: var(--text);
+  padding: 0 2px;
+  border-radius: 3px;
 }
 
 .doc-date {
@@ -956,6 +1028,38 @@ textarea {
   max-width: 900px;
   margin: 0 auto;
   width: 100%;
+}
+
+.viewer-content pre {
+  background: #0f1117;
+  border: 1px solid var(--border);
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 16px 0;
+}
+
+.viewer-content code {
+  font-family: 'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+}
+
+.viewer-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+}
+
+.viewer-content th,
+.viewer-content td {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+}
+
+.viewer-content blockquote {
+  border-left: 3px solid var(--accent);
+  margin: 16px 0;
+  padding-left: 16px;
+  color: var(--text-dim);
 }
 
 .viewer-empty {
