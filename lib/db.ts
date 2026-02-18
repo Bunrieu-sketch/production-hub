@@ -41,6 +41,14 @@ function initDb() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    -- ── Health Reports ───────────────────────────────────────────────────
+    CREATE TABLE IF NOT EXISTS health_reports (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      report_text TEXT NOT NULL,
+      overall_score INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     -- ── People ───────────────────────────────────────────────────────────
     CREATE TABLE IF NOT EXISTS people (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -511,4 +519,31 @@ export function getStats() {
 export function getActivity(): Activity[] {
   const database = getDb();
   return database.prepare('SELECT * FROM activity_log ORDER BY created_at DESC LIMIT 20').all() as Activity[];
+}
+
+// ── Health Report helpers ─────────────────────────────────────────────────────
+
+export interface HealthReport {
+  id: number;
+  report_text: string;
+  overall_score: number;
+  created_at: string;
+}
+
+export function getLatestHealthReport(): HealthReport | null {
+  const database = getDb();
+  return database.prepare('SELECT * FROM health_reports ORDER BY created_at DESC LIMIT 1').get() as HealthReport | null;
+}
+
+export function createHealthReport(data: { report_text: string; overall_score: number }): HealthReport {
+  const database = getDb();
+  const result = database.prepare(
+    'INSERT INTO health_reports (report_text, overall_score) VALUES (?, ?)'
+  ).run(data.report_text, data.overall_score);
+  return database.prepare('SELECT * FROM health_reports WHERE id = ?').get(result.lastInsertRowid) as HealthReport;
+}
+
+export function getHealthReports(limit = 10): HealthReport[] {
+  const database = getDb();
+  return database.prepare('SELECT * FROM health_reports ORDER BY created_at DESC LIMIT ?').all(limit) as HealthReport[];
 }
