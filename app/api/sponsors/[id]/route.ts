@@ -17,7 +17,19 @@ function normalizeSubStatus(stage: string, subStatus?: string | null) {
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const db = getDb();
-  const row = db.prepare('SELECT * FROM sponsors WHERE id = ?').get(id);
+  const row = db.prepare(`
+    SELECT
+      sponsors.*,
+      episodes.view_count as episode_view_count,
+      episodes.view_count_updated_at as episode_view_count_updated_at,
+      episodes.youtube_video_id as episode_youtube_video_id,
+      episodes.thumbnail_url as episode_thumbnail_url,
+      episodes.actual_publish_date as episode_publish_date,
+      episodes.publish_date as episode_target_publish_date
+    FROM sponsors
+    LEFT JOIN episodes ON sponsors.episode_id = episodes.id
+    WHERE sponsors.id = ?
+  `).get(id);
   if (!row) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json(row);
 }
@@ -71,7 +83,20 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   values.push(id);
 
   db.prepare(`UPDATE sponsors SET ${updates.join(', ')} WHERE id = ?`).run(...values);
-  return NextResponse.json(db.prepare('SELECT * FROM sponsors WHERE id = ?').get(id));
+  const row = db.prepare(`
+    SELECT
+      sponsors.*,
+      episodes.view_count as episode_view_count,
+      episodes.view_count_updated_at as episode_view_count_updated_at,
+      episodes.youtube_video_id as episode_youtube_video_id,
+      episodes.thumbnail_url as episode_thumbnail_url,
+      episodes.actual_publish_date as episode_publish_date,
+      episodes.publish_date as episode_target_publish_date
+    FROM sponsors
+    LEFT JOIN episodes ON sponsors.episode_id = episodes.id
+    WHERE sponsors.id = ?
+  `).get(id);
+  return NextResponse.json(row);
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
