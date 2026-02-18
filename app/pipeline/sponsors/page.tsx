@@ -190,8 +190,8 @@ function getCpmSnapshot(sponsor: Sponsor) {
   const { net } = calcCpmAmount(liveViews, rate, cap);
   return {
     amount: net,
-    label: `Est: ${formatMoney(net)} (${liveViews.toLocaleString()} views, ${daysLeft} day${daysLeft === 1 ? '' : 's'} left)`,
-    color: 'var(--orange)',
+    label: `${formatMoney(net)} (${liveViews.toLocaleString()} views)`,
+    color: 'var(--green)',
     status: 'pre_lock' as const,
     daysLeft,
     viewsUsed: liveViews,
