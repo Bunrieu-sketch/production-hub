@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design System — Style Card</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  :root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-dim: #7d8590;
+    --accent: #a371f7;
+    --accent-hover: #8957e5;
+    --green: #3fb950;
+    --green-dim: #238636;
+    --blue: #58a6ff;
+    --orange: #d29922;
+    --red: #f85149;
+    --hover-bg: #21262d;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    padding: 48px;
+    line-height: 1.5;
+  }
+
+  .style-card {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-bottom: 48px;
+  }
+
+  .section {
+    margin-bottom: 48px;
+  }
+
+  .section-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ---- Philosophy ---- */
+  .philosophy-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .philosophy-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .philosophy-card h3 {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+  .philosophy-card p {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* ---- Colors ---- */
+  .color-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+  }
+  .color-swatch {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .swatch-block {
+    height: 64px;
+  }
+  .swatch-info {
+    background: var(--card);
+    padding: 10px 12px;
+  }
+  .swatch-name {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .swatch-hex {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'SF Mono', Monaco, monospace;
+  }
+  .swatch-use {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  /* ---- Semantic Colors ---- */
+  .semantic-grid {
+    display: flex;
+    gap: 24px;
+    margin-top: 16px;
+  }
+  .semantic-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .semantic-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .semantic-label {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  /* ---- Typography ---- */
+  .type-row {
+    display: flex;
+    align-items: baseline;
+    gap: 24px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(48, 54, 61, 0.5);
+  }
+  .type-row:last-child { border: none; }
+  .type-meta {
+    width: 180px;
+    flex-shrink: 0;
+  }
+  .type-meta .size {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: 'SF Mono', Monaco, monospace;
+  }
+  .type-meta .weight {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .type-sample-28 { font-size: 28px; font-weight: 700; }
+  .type-sample-22 { font-size: 22px; font-weight: 600; }
+  .type-sample-16 { font-size: 16px; font-weight: 600; }
+  .type-sample-13 { font-size: 13px; font-weight: 500; }
+  .type-sample-13r { font-size: 13px; font-weight: 400; }
+  .type-sample-12 { font-size: 12px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+  .type-sample-11 { font-size: 11px; color: var(--text-dim); }
+
+  /* ---- Spacing ---- */
+  .spacing-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+  .spacing-bar {
+    height: 8px;
+    background: var(--accent);
+    border-radius: 2px;
+    opacity: 0.6;
+  }
+  .spacing-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'SF Mono', Monaco, monospace;
+    width: 40px;
+    flex-shrink: 0;
+  }
+  .spacing-use {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  /* ---- Components ---- */
+  .component-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .component-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .component-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+  }
+
+  /* Sidebar demo */
+  .demo-sidebar {
+    width: 180px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 8px;
+  }
+  .demo-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--text-dim);
+    cursor: default;
+  }
+  .demo-nav-item:hover { background: var(--hover-bg); color: var(--text); }
+  .demo-nav-item.active { background: rgba(163, 113, 247, 0.15); color: var(--accent); }
+  .demo-nav-item svg { width: 16px; height: 16px; }
+
+  /* Card demo */
+  .demo-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    max-width: 280px;
+    cursor: default;
+    transition: border-color 0.15s;
+  }
+  .demo-card:hover { border-color: var(--accent); }
+  .demo-card-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .demo-priority {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .demo-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+  }
+  .demo-card-desc {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin: 4px 0 8px;
+  }
+  .demo-tag {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #21262d;
+    color: #8b949e;
+    display: inline-block;
+  }
+
+  /* Button demo */
+  .demo-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-family: inherit;
+  }
+  .demo-btn:hover { background: var(--accent-hover); }
+  .demo-btn-ghost {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    margin-left: 8px;
+  }
+  .demo-btn-ghost:hover { border-color: var(--text-dim); color: var(--text); }
+
+  /* Input demo */
+  .demo-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+    width: 260px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .demo-input:focus { border-color: var(--accent); }
+  .demo-input::placeholder { color: var(--text-dim); }
+
+  /* Status bar demo */
+  .demo-status-bar {
+    display: flex;
+    gap: 24px;
+  }
+  .demo-stat {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .demo-stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .demo-stat-label {
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  /* Gantt demo */
+  .demo-gantt {
+    position: relative;
+  }
+  .gantt-header {
+    display: flex;
+    margin-bottom: 12px;
+    padding-left: 140px;
+  }
+  .gantt-month {
+    flex: 1;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .gantt-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    height: 28px;
+  }
+  .gantt-label {
+    width: 140px;
+    font-size: 12px;
+    color: var(--text);
+    flex-shrink: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .gantt-track {
+    flex: 1;
+    position: relative;
+    height: 20px;
+  }
+  .gantt-bar {
+    position: absolute;
+    height: 20px;
+    border-radius: 4px;
+    display: flex;
+    overflow: hidden;
+  }
+  .gantt-segment {
+    height: 100%;
+  }
+  .gantt-milestone {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #fff;
+    top: 6px;
+    border: 2px solid var(--bg);
+  }
+  .gantt-today {
+    position: absolute;
+    width: 1px;
+    background: var(--red);
+    opacity: 0.6;
+    top: 0;
+    bottom: 0;
+    left: 55%;
+  }
+
+  /* Border Radius */
+  .radius-grid {
+    display: flex;
+    gap: 24px;
+    align-items: end;
+  }
+  .radius-item {
+    text-align: center;
+  }
+  .radius-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    width: 64px;
+    height: 48px;
+    margin-bottom: 6px;
+  }
+  .radius-item .size {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'SF Mono', Monaco, monospace;
+  }
+  .radius-item .use {
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  /* Anti-patterns */
+  .anti-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .anti-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .anti-item .x {
+    color: var(--red);
+    font-weight: 600;
+    margin-right: 6px;
+  }
+</style>
+</head>
+<body>
+<div class="style-card">
+
+  <h1>Design System</h1>
+  <p class="subtitle">Linear meets Obsidian — Andrew Fraser Dashboard Suite</p>
+
+  <!-- Philosophy -->
+  <div class="section">
+    <div class="section-title">Design Philosophy</div>
+    <div class="philosophy-grid">
+      <div class="philosophy-card">
+        <h3>Opacity, Not Colors</h3>
+        <p>Build palette from white/black at different opacities over the base. Everything mathematically related.</p>
+      </div>
+      <div class="philosophy-card">
+        <h3>Color = Meaning</h3>
+        <p>Reserve color for semantic use only: status, priority, urgency. Never decorative.</p>
+      </div>
+      <div class="philosophy-card">
+        <h3>Whisper, Don't Shout</h3>
+        <p>Subtle hover states. Low-opacity accent washes. Fast transitions. Nothing screams.</p>
+      </div>
+      <div class="philosophy-card">
+        <h3>Earn Every Pixel</h3>
+        <p>If an element doesn't help the user do something, remove it. Content-first, always.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Colors -->
+  <div class="section">
+    <div class="section-title">Color Palette</div>
+    <div class="color-grid">
+      <div class="color-swatch">
+        <div class="swatch-block" style="background: #0d1117;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Background</div>
+          <div class="swatch-hex">#0d1117</div>
+          <div class="swatch-use">Page background</div>
+        </div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch-block" style="background: #161b22;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Card</div>
+          <div class="swatch-hex">#161b22</div>
+          <div class="swatch-use">Sidebar, panels, cards</div>
+        </div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch-block" style="background: #21262d;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Hover</div>
+          <div class="swatch-hex">#21262d</div>
+          <div class="swatch-use">Interactive hover bg</div>
+        </div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch-block" style="background: #30363d;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Border</div>
+          <div class="swatch-hex">#30363d</div>
+          <div class="swatch-use">Borders, dividers</div>
+        </div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch-block" style="background: #e6edf3;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Text</div>
+          <div class="swatch-hex">#e6edf3</div>
+          <div class="swatch-use">Primary text</div>
+        </div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch-block" style="background: #7d8590;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Text Dim</div>
+          <div class="swatch-hex">#7d8590</div>
+          <div class="swatch-use">Secondary text</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Semantic colors -->
+    <div class="semantic-grid">
+      <div class="semantic-item">
+        <div class="semantic-dot" style="background: var(--accent);"></div>
+        <span class="semantic-label">Accent #a371f7</span>
+      </div>
+      <div class="semantic-item">
+        <div class="semantic-dot" style="background: var(--blue);"></div>
+        <span class="semantic-label">In Progress #58a6ff</span>
+      </div>
+      <div class="semantic-item">
+        <div class="semantic-dot" style="background: var(--green);"></div>
+        <span class="semantic-label">Done #3fb950</span>
+      </div>
+      <div class="semantic-item">
+        <div class="semantic-dot" style="background: var(--orange);"></div>
+        <span class="semantic-label">Review #d29922</span>
+      </div>
+      <div class="semantic-item">
+        <div class="semantic-dot" style="background: var(--red);"></div>
+        <span class="semantic-label">Urgent #f85149</span>
+      </div>
+      <div class="semantic-item">
+        <div class="semantic-dot" style="background: #8b949e;"></div>
+        <span class="semantic-label">Backlog #8b949e</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Typography -->
+  <div class="section">
+    <div class="section-title">Typography — Inter</div>
+    <div class="type-row">
+      <div class="type-meta"><span class="size">28px / 700</span><br><span class="weight">Stat values</span></div>
+      <span class="type-sample-28">426,000</span>
+    </div>
+    <div class="type-row">
+      <div class="type-meta"><span class="size">22px / 600</span><br><span class="weight">Page title</span></div>
+      <span class="type-sample-22">Production Calendar</span>
+    </div>
+    <div class="type-row">
+      <div class="type-meta"><span class="size">16px / 600</span><br><span class="weight">Section header</span></div>
+      <span class="type-sample-16">Upcoming Milestones</span>
+    </div>
+    <div class="type-row">
+      <div class="type-meta"><span class="size">13px / 500</span><br><span class="weight">Card title</span></div>
+      <span class="type-sample-13">Phú Quốc Island Paradise</span>
+    </div>
+    <div class="type-row">
+      <div class="type-meta"><span class="size">13px / 400</span><br><span class="weight">Body text</span></div>
+      <span class="type-sample-13r">Shoot scheduled for March 15–20 in Phú Quốc</span>
+    </div>
+    <div class="type-row">
+      <div class="type-meta"><span class="size">12px / 600</span><br><span class="weight">Category header</span></div>
+      <span class="type-sample-12">Productions</span>
+    </div>
+    <div class="type-row">
+      <div class="type-meta"><span class="size">11px / 400</span><br><span class="weight">Meta, timestamps</span></div>
+      <span class="type-sample-11">Updated 3 hours ago · Port 5055</span>
+    </div>
+  </div>
+
+  <!-- Spacing -->
+  <div class="section">
+    <div class="section-title">Spacing Scale</div>
+    <div class="spacing-row">
+      <span class="spacing-label">4px</span>
+      <div class="spacing-bar" style="width: 4px;"></div>
+      <span class="spacing-use">Nav item gap</span>
+    </div>
+    <div class="spacing-row">
+      <span class="spacing-label">8px</span>
+      <div class="spacing-bar" style="width: 8px;"></div>
+      <span class="spacing-use">Card list gap, inner element spacing</span>
+    </div>
+    <div class="spacing-row">
+      <span class="spacing-label">12px</span>
+      <div class="spacing-bar" style="width: 12px;"></div>
+      <span class="spacing-use">Card padding, column gap</span>
+    </div>
+    <div class="spacing-row">
+      <span class="spacing-label">16px</span>
+      <div class="spacing-bar" style="width: 16px;"></div>
+      <span class="spacing-use">Panel padding, grid item gap</span>
+    </div>
+    <div class="spacing-row">
+      <span class="spacing-label">24px</span>
+      <div class="spacing-bar" style="width: 24px;"></div>
+      <span class="spacing-use">Content padding, major section gap</span>
+    </div>
+    <div class="spacing-row">
+      <span class="spacing-label">48px</span>
+      <div class="spacing-bar" style="width: 48px;"></div>
+      <span class="spacing-use">Page margin, section separator</span>
+    </div>
+  </div>
+
+  <!-- Border Radius -->
+  <div class="section">
+    <div class="section-title">Border Radius</div>
+    <div class="radius-grid">
+      <div class="radius-item">
+        <div class="radius-box" style="border-radius: 4px;"></div>
+        <div class="size">4px</div>
+        <div class="use">Tags, badges</div>
+      </div>
+      <div class="radius-item">
+        <div class="radius-box" style="border-radius: 6px;"></div>
+        <div class="size">6px</div>
+        <div class="use">Buttons, inputs</div>
+      </div>
+      <div class="radius-item">
+        <div class="radius-box" style="border-radius: 8px;"></div>
+        <div class="size">8px</div>
+        <div class="use">Cards</div>
+      </div>
+      <div class="radius-item">
+        <div class="radius-box" style="border-radius: 10px;"></div>
+        <div class="size">10px</div>
+        <div class="use">Panels, columns</div>
+      </div>
+      <div class="radius-item">
+        <div class="radius-box" style="border-radius: 12px;"></div>
+        <div class="size">12px</div>
+        <div class="use">Modals</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Components -->
+  <div class="section">
+    <div class="section-title">Components</div>
+    <div class="component-grid">
+
+      <!-- Sidebar -->
+      <div class="component-box">
+        <div class="component-label">Sidebar Navigation</div>
+        <div class="demo-sidebar">
+          <div class="demo-nav-item active">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            Dashboard
+          </div>
+          <div class="demo-nav-item">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Calendar
+          </div>
+          <div class="demo-nav-item">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            Timeline
+          </div>
+          <div class="demo-nav-item">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/></svg>
+            Productions
+          </div>
+        </div>
+      </div>
+
+      <!-- Cards -->
+      <div class="component-box">
+        <div class="component-label">Task Cards</div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div class="demo-card">
+            <div class="demo-card-top">
+              <div class="demo-priority" style="background: var(--orange);"></div>
+              <span class="demo-card-title">Phú Quốc Island Paradise</span>
+            </div>
+            <div class="demo-card-desc">Pre-production — scouting locations and booking travel</div>
+            <span class="demo-tag">pre-prod</span>
+          </div>
+          <div class="demo-card">
+            <div class="demo-card-top">
+              <div class="demo-priority" style="background: var(--blue);"></div>
+              <span class="demo-card-title">Street Food Wars: Hanoi vs Saigon</span>
+            </div>
+            <div class="demo-card-desc">First edit in progress with editor team</div>
+            <span class="demo-tag">editing</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Buttons & Inputs -->
+      <div class="component-box">
+        <div class="component-label">Buttons & Inputs</div>
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div>
+            <button class="demo-btn">New Production</button>
+            <button class="demo-btn-ghost">Cancel</button>
+          </div>
+          <div>
+            <input class="demo-input" type="text" placeholder="Search productions..." />
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Bar -->
+      <div class="component-box">
+        <div class="component-label">Stats Bar</div>
+        <div class="demo-status-bar">
+          <div class="demo-stat">
+            <span class="demo-stat-value" style="color: var(--green);">3</span>
+            <span class="demo-stat-label">Active</span>
+          </div>
+          <div class="demo-stat">
+            <span class="demo-stat-value" style="color: var(--accent);">7</span>
+            <span class="demo-stat-label">Milestones</span>
+          </div>
+          <div class="demo-stat">
+            <span class="demo-stat-value" style="color: var(--red);">2</span>
+            <span class="demo-stat-label">Overdue</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gantt Demo -->
+  <div class="section">
+    <div class="section-title">Gantt / Timeline</div>
+    <div class="component-box">
+      <div class="demo-gantt">
+        <div class="gantt-header">
+          <span class="gantt-month">Jan</span>
+          <span class="gantt-month">Feb</span>
+          <span class="gantt-month">Mar</span>
+          <span class="gantt-month">Apr</span>
+        </div>
+        <div class="gantt-row">
+          <span class="gantt-label">Phú Quốc Paradise</span>
+          <div class="gantt-track">
+            <div class="gantt-bar" style="left: 10%; width: 45%;">
+              <div class="gantt-segment" style="width: 25%; background: var(--orange); opacity: 0.8;"></div>
+              <div class="gantt-segment" style="width: 30%; background: var(--blue); opacity: 0.8;"></div>
+              <div class="gantt-segment" style="width: 45%; background: var(--accent); opacity: 0.6;"></div>
+            </div>
+            <div class="gantt-today"></div>
+          </div>
+        </div>
+        <div class="gantt-row">
+          <span class="gantt-label">Street Food Wars</span>
+          <div class="gantt-track">
+            <div class="gantt-bar" style="left: 25%; width: 55%;">
+              <div class="gantt-segment" style="width: 15%; background: var(--orange); opacity: 0.8;"></div>
+              <div class="gantt-segment" style="width: 20%; background: var(--blue); opacity: 0.8;"></div>
+              <div class="gantt-segment" style="width: 35%; background: var(--accent); opacity: 0.6;"></div>
+              <div class="gantt-segment" style="width: 30%; background: var(--green); opacity: 0.6;"></div>
+            </div>
+            <div class="gantt-today"></div>
+          </div>
+        </div>
+        <div class="gantt-row">
+          <span class="gantt-label">Ha Giang Motorbike</span>
+          <div class="gantt-track">
+            <div class="gantt-bar" style="left: 45%; width: 40%;">
+              <div class="gantt-segment" style="width: 30%; background: var(--orange); opacity: 0.8;"></div>
+              <div class="gantt-segment" style="width: 70%; background: rgba(125, 133, 144, 0.3);"></div>
+            </div>
+            <div class="gantt-today"></div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 16px; margin-top: 16px; padding-left: 140px;">
+          <div class="semantic-item"><div class="semantic-dot" style="background: var(--orange);"></div><span class="semantic-label" style="font-size: 10px;">Pre-prod</span></div>
+          <div class="semantic-item"><div class="semantic-dot" style="background: var(--blue);"></div><span class="semantic-label" style="font-size: 10px;">Shooting</span></div>
+          <div class="semantic-item"><div class="semantic-dot" style="background: var(--accent);"></div><span class="semantic-label" style="font-size: 10px;">Editing</span></div>
+          <div class="semantic-item"><div class="semantic-dot" style="background: var(--green);"></div><span class="semantic-label" style="font-size: 10px;">Review</span></div>
+          <div class="semantic-item"><div style="width: 1px; height: 12px; background: var(--red); opacity: 0.6;"></div><span class="semantic-label" style="font-size: 10px;">Today</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Anti-patterns -->
+  <div class="section">
+    <div class="section-title">Anti-Patterns</div>
+    <div class="anti-grid">
+      <div class="anti-item"><span class="x">✕</span> Emojis in UI</div>
+      <div class="anti-item"><span class="x">✕</span> Box shadows</div>
+      <div class="anti-item"><span class="x">✕</span> Gradient backgrounds</div>
+      <div class="anti-item"><span class="x">✕</span> Multiple accent colors</div>
+      <div class="anti-item"><span class="x">✕</span> Bright saturated areas</div>
+      <div class="anti-item"><span class="x">✕</span> Pure black (#000)</div>
+      <div class="anti-item"><span class="x">✕</span> Pure white (#fff) text</div>
+      <div class="anti-item"><span class="x">✕</span> CSS frameworks (PicoCSS)</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
