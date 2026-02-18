@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, DollarSign, X, ChevronRight } from 'lucide-react';
+import { Plus, DollarSign, X, ChevronRight, FileDown } from 'lucide-react';
 
 interface Sponsor {
   id: number; brand_name: string; stage: string; sub_status: string | null;
@@ -197,6 +197,69 @@ function getCpmSnapshot(sponsor: Sponsor) {
     viewsUsed: liveViews,
     isLocked: false,
   };
+}
+
+// ── Compact CPM stats widget for kanban cards ──────────────────────────────
+function CpmCardWidget({ sp }: { sp: Sponsor }) {
+  const rate = sp.cpm_rate ?? 0;
+  const cap  = sp.cpm_cap  ?? 0;
+  const views = sp.views_at_30_days || sp.episode_view_count || 0;
+  const publishDate = getPublishDate(sp);
+  const days = publishDate ? Math.floor((Date.now() - publishDate.getTime()) / DAY_MS) : null;
+  const isFinal = days !== null && days >= 30;
+
+  if (!rate) return null;
+
+  const grossEarnings  = (views / 1000) * rate;
+  const cappedEarnings = cap > 0 ? Math.min(grossEarnings, cap) : grossEarnings;
+  const hitCap = cap > 0 && grossEarnings >= cap;
+  const pct    = cap > 0 ? Math.min((cappedEarnings / cap) * 100, 100) : 0;
+
+  const fmtMoney = (n: number) =>
+    n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${n.toFixed(0)}`;
+
+  return (
+    <div style={{ marginTop: 5, fontSize: 10 }}>
+      {/* Views · Earnings / Cap */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 3 }}>
+        <span style={{ color: 'var(--text-dim)' }}>
+          {views > 0 ? `${(views / 1000).toFixed(1)}k views` : 'No views yet'}
+        </span>
+        <span style={{ fontWeight: 700, color: hitCap ? 'var(--green)' : isFinal ? 'var(--green)' : 'var(--orange)' }}>
+          {views > 0 ? fmtMoney(cappedEarnings) : '—'}
+          {cap > 0 ? ` / ${fmtMoney(cap)}` : ''}
+          {hitCap ? ' 🔒' : ''}
+        </span>
+      </div>
+
+      {/* Progress bar */}
+      {cap > 0 && (
+        <div style={{ height: 3, borderRadius: 2, background: 'var(--border)', overflow: 'hidden', marginBottom: 3 }}>
+          <div style={{
+            height: '100%',
+            width: `${pct}%`,
+            background: hitCap ? 'var(--green)' : isFinal ? 'var(--green)' : 'var(--orange)',
+            borderRadius: 2,
+            transition: 'width 0.3s ease',
+          }} />
+        </div>
+      )}
+
+      {/* Days + final/accruing */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-dim)' }}>
+        <span>{days !== null ? `${days}d` : 'No publish date'}</span>
+        {days !== null && (
+          <span style={{
+            padding: '0 4px', borderRadius: 3, fontWeight: 700, fontSize: 9,
+            background: isFinal ? 'rgba(63,185,80,0.15)' : 'rgba(230,162,60,0.15)',
+            color: isFinal ? 'var(--green)' : 'var(--orange)',
+          }}>
+            {isFinal ? 'FINAL' : 'ACCRUING'}
+          </span>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // Get display value for a sponsor (handles both flat rate and CPM)
@@ -475,19 +538,28 @@ export default function SponsorsPage() {
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--accent)'; }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; }}
                   >
-                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{sp.brand_name}</div>
-                    {(() => {
-                      const display = getDisplayValue(sp);
-                      return display.amount > 0 || sp.deal_type === 'cpm' ? (
-                        <div style={{ fontSize: 11, color: display.color, marginBottom: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
-                          <DollarSign size={9} /> {display.label}
-                        </div>
-                      ) : null;
-                    })()}
-                    {sp.deal_type !== 'flat_rate' && (
-                      <div style={{ fontSize: 10, color: 'var(--accent)', marginBottom: 3, fontWeight: 600 }}>
-                        {sp.deal_type.toUpperCase().replace('_', ' ')}
-                      </div>
+                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 3 }}>{sp.brand_name}</div>
+                    {sp.deal_type === 'cpm' ? (
+                      <>
+                        <div style={{ fontSize: 9, color: 'var(--accent)', fontWeight: 700, letterSpacing: '0.06em', marginBottom: 2 }}>CPM</div>
+                        <CpmCardWidget sp={sp} />
+                      </>
+                    ) : (
+                      <>
+                        {(() => {
+                          const display = getDisplayValue(sp);
+                          return display.amount > 0 ? (
+                            <div style={{ fontSize: 11, color: display.color, marginBottom: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
+                              <DollarSign size={9} /> {display.label}
+                            </div>
+                          ) : null;
+                        })()}
+                        {sp.deal_type !== 'flat_rate' && (
+                          <div style={{ fontSize: 10, color: 'var(--accent)', marginBottom: 3, fontWeight: 600 }}>
+                            {sp.deal_type.toUpperCase().replace('_', ' ')}
+                          </div>
+                        )}
+                      </>
                     )}
                     {stage.key === 'leads' && (
                       <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 4 }}>
@@ -565,9 +637,20 @@ export default function SponsorsPage() {
                     {saving && <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>Saving...</span>}
                   </div>
                 </div>
-                <button className="btn btn-ghost" style={{ padding: '4px 6px' }} onClick={() => setSelected(null)}>
-                  <X size={16} />
-                </button>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <a
+                    href={`/api/sponsors/${selected.id}/invoice`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-secondary"
+                    style={{ padding: '4px 10px', fontSize: 11, display: 'flex', alignItems: 'center', gap: 4, textDecoration: 'none' }}
+                  >
+                    <FileDown size={12} /> Invoice
+                  </a>
+                  <button className="btn btn-ghost" style={{ padding: '4px 6px' }} onClick={() => setSelected(null)}>
+                    <X size={16} />
+                  </button>
+                </div>
               </div>
               <div className="tab-bar" style={{ borderBottom: 'none', marginBottom: 0 }}>
                 {(['overview', 'script', 'checklist', 'payment'] as DetailTab[]).map(t => (
@@ -831,13 +914,28 @@ export default function SponsorsPage() {
                         const canLock = !!selected.episode_id && liveViews > 0 && lockedViews === 0;
                         return (
                           <div style={{ background: 'var(--bg)', borderRadius: 6, padding: 12, border: '1px solid var(--border)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                              <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>
-                                {cpmSnapshot.daysLeft === null
-                                  ? 'Publish date needed to lock views'
-                                  : cpmSnapshot.isLocked
-                                    ? 'Views locked'
-                                    : `Locks in ${cpmSnapshot.daysLeft} day${cpmSnapshot.daysLeft === 1 ? '' : 's'}`}
+                            {/* Status row */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                {(() => {
+                                  const pd = getPublishDate(selected);
+                                  const d = pd ? Math.floor((Date.now() - pd.getTime()) / DAY_MS) : null;
+                                  const fin = d !== null && d >= 30;
+                                  return (
+                                    <>
+                                      {d !== null && (
+                                        <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Day {d}</span>
+                                      )}
+                                      <span style={{
+                                        fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 20,
+                                        background: fin ? 'rgba(63,185,80,0.15)' : 'rgba(230,162,60,0.15)',
+                                        color: fin ? 'var(--green)' : 'var(--orange)',
+                                      }}>
+                                        {fin ? '✓ FINAL' : cpmSnapshot.daysLeft !== null ? `ACCRUING · ${cpmSnapshot.daysLeft}d left` : 'No publish date'}
+                                      </span>
+                                    </>
+                                  );
+                                })()}
                               </div>
                               <button
                                 className="btn btn-secondary"
@@ -848,17 +946,49 @@ export default function SponsorsPage() {
                                 Lock Views
                               </button>
                             </div>
+
+                            {/* Progress bar toward cap */}
+                            {cpmCap > 0 && (
+                              <div style={{ marginBottom: 10 }}>
+                                {(() => {
+                                  const gross = lockedViews > 0 ? lockedCalc.gross : liveCalc.gross;
+                                  const pct = Math.min((gross / cpmCap) * 100, 100);
+                                  const hitCap = lockedViews > 0 ? lockedCalc.hitCap : liveCalc.hitCap;
+                                  return (
+                                    <>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-dim)', marginBottom: 4 }}>
+                                        <span>Cap progress</span>
+                                        <span style={{ fontWeight: 600, color: hitCap ? 'var(--green)' : 'var(--text)' }}>
+                                          {pct.toFixed(0)}%{hitCap ? ' 🔒 Capped' : ''}
+                                        </span>
+                                      </div>
+                                      <div style={{ height: 6, borderRadius: 3, background: 'var(--border)', overflow: 'hidden' }}>
+                                        <div style={{
+                                          height: '100%',
+                                          width: `${pct}%`,
+                                          background: hitCap ? 'var(--green)' : 'var(--orange)',
+                                          borderRadius: 3,
+                                          transition: 'width 0.4s ease',
+                                        }} />
+                                      </div>
+                                    </>
+                                  );
+                                })()}
+                              </div>
+                            )}
+
+                            {/* Earnings lines */}
                             <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 6 }}>
-                              Live estimate: {liveViews.toLocaleString()} views → {formatMoney(liveCalc.net)} net
-                              {liveCalc.hitCap && <span style={{ fontSize: 11, color: 'var(--orange)', marginLeft: 8 }}>(capped)</span>}
+                              Live: {liveViews.toLocaleString()} views → {formatMoney(liveCalc.gross)} gross · {formatMoney(liveCalc.net)} net
+                              {liveCalc.hitCap && <span style={{ color: 'var(--orange)', marginLeft: 6 }}>(capped)</span>}
                             </div>
                             {lockedViews > 0 ? (
                               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--green)' }}>
-                                Final snapshot: {lockedViews.toLocaleString()} views → {formatMoney(lockedCalc.net)} net
+                                ✓ Final: {lockedViews.toLocaleString()} views → {formatMoney(lockedCalc.gross)} gross · {formatMoney(lockedCalc.net)} net
                               </div>
                             ) : (
-                              <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>
-                                Locked views not set yet.
+                              <div style={{ fontSize: 12, color: 'var(--text-dim)', fontStyle: 'italic' }}>
+                                Lock views to confirm final amount
                               </div>
                             )}
                           </div>
