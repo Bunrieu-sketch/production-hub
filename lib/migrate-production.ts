@@ -39,6 +39,32 @@ function tableExists(db: Database.Database, name: string): boolean {
   return !!row;
 }
 
+const LEAD_SUB_STATUSES = ['inquiry', 'negotiation'];
+const CONTENT_SUB_STATUSES = ['brief_received', 'script_writing', 'script_submitted', 'script_approved', 'filming', 'brand_review'];
+
+function normalizeSubStatus(stage: string, subStatus?: string | null) {
+  if (stage === 'leads') {
+    return LEAD_SUB_STATUSES.includes(subStatus || '') ? subStatus : 'inquiry';
+  }
+  if (stage === 'content') {
+    return CONTENT_SUB_STATUSES.includes(subStatus || '') ? subStatus : 'brief_received';
+  }
+  return null;
+}
+
+function mapStage(stage?: string | null) {
+  const value = stage || 'inquiry';
+  if (LEAD_SUB_STATUSES.includes(value)) return { stage: 'leads', sub_status: value };
+  if (value === 'contract') return { stage: 'contracted', sub_status: null };
+  if (CONTENT_SUB_STATUSES.includes(value)) return { stage: 'content', sub_status: value };
+  if (value === 'live') return { stage: 'published', sub_status: null };
+  if (['invoiced', 'paid'].includes(value)) return { stage: value, sub_status: null };
+  if (['leads', 'contracted', 'content', 'published', 'invoiced', 'paid'].includes(value)) {
+    return { stage: value, sub_status: normalizeSubStatus(value, null) };
+  }
+  return { stage: 'leads', sub_status: 'inquiry' };
+}
+
 function migrateProdHub() {
   const src = openIfExists(PROD_HUB_DB);
   if (!src) return;
@@ -139,21 +165,22 @@ function migrateProdHub() {
       const sponsors = src.prepare('SELECT * FROM sponsors').all() as Array<Record<string, unknown>>;
       const insertSponsor = mc.prepare(`
         INSERT OR IGNORE INTO sponsors (
-          brand_name, deal_type, deal_value_gross, deal_value_net, stage,
+          brand_name, deal_type, deal_value_gross, deal_value_net, stage, sub_status,
           contact_name, contact_email, agency_name,
           offer_date, contract_date, brief_due, script_due, film_by,
           brand_review_due, live_date, invoice_date, payment_due_date, payment_received_date,
           placement, integration_length_seconds, brief_text, script_draft,
           requires_product, product_ordered_date, product_ship_to, product_received,
           notes, created_at, updated_at
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
       `);
       let count = 0;
       const txn = mc.transaction(() => {
         for (const s of sponsors) {
           const gross = (s.deal_value as number) || 0;
+          const mapped = mapStage((s.stage as string) || null);
           insertSponsor.run(
-            s.brand_name, s.deal_type || 'flat_rate', gross, gross * 0.8, s.stage || 'inquiry',
+            s.brand_name, s.deal_type || 'flat_rate', gross, gross * 0.8, mapped.stage, mapped.sub_status,
             s.contact_name || '', s.contact_email || '', s.agency_name || '',
             s.offer_date, s.contract_date, s.brief_due, s.script_due, s.film_by,
             s.brand_review_due, s.live_date, s.invoice_date, s.payment_due_date, s.payment_received_date,
@@ -189,7 +216,7 @@ function migratePipeline() {
 
       const insertSponsor = mc.prepare(`
         INSERT OR IGNORE INTO sponsors (
-          brand_name, deal_type, deal_value_gross, deal_value_net, stage,
+          brand_name, deal_type, deal_value_gross, deal_value_net, stage, sub_status,
           contact_name, contact_email, agency_name,
           offer_date, contract_date, script_due, live_date,
           invoice_date, payment_due_date, payment_received_date,
@@ -202,7 +229,7 @@ function migratePipeline() {
           cpm_rate, cpm_cap, mvg,
           notes, next_action, next_action_due,
           created_at, updated_at
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
       `);
       let count = 0;
       const txn = mc.transaction(() => {
@@ -221,9 +248,10 @@ function migratePipeline() {
             make_good: 'live',
           };
           if (stageMap[stage]) stage = stageMap[stage];
+          const mapped = mapStage(stage);
 
           insertSponsor.run(
-            s.brand_name, s.deal_type || 'flat_rate', gross, net, stage,
+            s.brand_name, s.deal_type || 'flat_rate', gross, net, mapped.stage, mapped.sub_status,
             s.agency_contact || '', s.agency_email || '', '',
             s.offer_date, s.contract_date,
             s.script_due_date || s.script_due, s.publish_date || s.live_date,

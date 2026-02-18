@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 
+const LEAD_SUB_STATUSES = ['inquiry', 'negotiation'];
+const CONTENT_SUB_STATUSES = ['brief_received', 'script_writing', 'script_submitted', 'script_approved', 'filming', 'brand_review'];
+
+function normalizeSubStatus(stage: string, subStatus?: string | null) {
+  if (stage === 'leads') {
+    return LEAD_SUB_STATUSES.includes(subStatus || '') ? subStatus : 'inquiry';
+  }
+  if (stage === 'content') {
+    return CONTENT_SUB_STATUSES.includes(subStatus || '') ? subStatus : 'brief_received';
+  }
+  return null;
+}
+
 export async function GET(req: NextRequest) {
   const db = getDb();
   const { searchParams } = new URL(req.url);
@@ -19,7 +32,7 @@ export async function POST(req: NextRequest) {
   const db = getDb();
   const body = await req.json();
   const {
-    brand_name, deal_type, deal_value_gross, deal_value_net, stage,
+    brand_name, deal_type, deal_value_gross, deal_value_net, stage, sub_status,
     contact_name, contact_email, agency_name, agency_contact,
     offer_date, script_due, live_date, placement,
     integration_length_seconds, notes, brief_text,
@@ -29,18 +42,20 @@ export async function POST(req: NextRequest) {
 
   const gross = deal_value_gross || 0;
   const net = deal_value_net || gross * 0.8;
+  const nextStage = stage || 'leads';
+  const nextSubStatus = normalizeSubStatus(nextStage, sub_status);
 
   const result = db.prepare(`
     INSERT INTO sponsors (
-      brand_name, deal_type, deal_value_gross, deal_value_net, stage,
+      brand_name, deal_type, deal_value_gross, deal_value_net, stage, sub_status,
       contact_name, contact_email, agency_name, agency_contact,
       offer_date, script_due, live_date, placement,
       integration_length_seconds, notes, brief_text,
       payment_terms_brand_days, payment_terms_agency_days,
       cpm_rate, cpm_cap, mvg
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
-    brand_name, deal_type || 'flat_rate', gross, net, stage || 'inquiry',
+    brand_name, deal_type || 'flat_rate', gross, net, nextStage, nextSubStatus,
     contact_name || '', contact_email || '', agency_name || '', agency_contact || '',
     offer_date || null, script_due || null, live_date || null,
     placement || 'first_5_min', integration_length_seconds || 60,
