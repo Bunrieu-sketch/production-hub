@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-// frappe-gantt CSS loaded via style export — no direct CSS import needed
+// Load frappe-gantt CSS inline since the package export doesn't work with Next.js
+import '../styles/frappe-gantt-dark.css';
 
 export interface FrappeTask {
   id: string;
