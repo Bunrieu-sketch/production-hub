@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import 'frappe-gantt/dist/frappe-gantt.css';
+// frappe-gantt CSS loaded via style export — no direct CSS import needed
 
 export interface FrappeTask {
   id: string;

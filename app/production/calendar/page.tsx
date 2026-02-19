@@ -7,10 +7,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
 
-import '@fullcalendar/core/index.css';
-import '@fullcalendar/daygrid/index.css';
-import '@fullcalendar/timegrid/index.css';
-import '@fullcalendar/list/index.css';
+// FullCalendar v6 bundles CSS into JS — no separate CSS imports needed
 
 const FullCalendar = dynamic(() => import('@fullcalendar/react'), { ssr: false });
 
