@@ -7,7 +7,7 @@ import {
   LayoutGrid, Kanban, FileText, Search, Palette,
   GanttChart, Calendar, Clapperboard, Video,
   HandCoins, Users, ChevronDown, ChevronRight,
-  ExternalLink,
+  ExternalLink, ShieldCheck,
 } from 'lucide-react';
 
 interface NavSection {
@@ -122,6 +122,11 @@ export function Sidebar() {
         <span>Competitor Intel</span>
         <ExternalLink size={10} style={{ marginLeft: 'auto', opacity: 0.4 }} />
       </a>
+
+      <Link href="/health-council" className={`nav-item ${isActive('/health-council') ? 'active' : ''}`}>
+        <ShieldCheck size={18} />
+        <span>Health Council</span>
+      </Link>
 
       <Link href="/docs" className={`nav-item ${isActive('/docs') ? 'active' : ''}`}>
         <FileText size={18} />
