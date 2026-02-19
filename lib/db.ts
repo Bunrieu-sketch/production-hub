@@ -62,6 +62,7 @@ function initDb() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
       location TEXT DEFAULT '',
+      country TEXT DEFAULT '',
       status TEXT DEFAULT 'ideation' CHECK(status IN ('ideation', 'pre_prod', 'shooting', 'post_prod', 'published', 'archived')),
       target_shoot_start TEXT,
       target_shoot_end TEXT,
@@ -93,6 +94,11 @@ function initDb() {
       youtube_video_id TEXT DEFAULT '',
       youtube_url TEXT DEFAULT '',
       view_count INTEGER DEFAULT 0,
+      like_count INTEGER DEFAULT 0,
+      comment_count INTEGER DEFAULT 0,
+      description TEXT DEFAULT '',
+      duration_seconds INTEGER DEFAULT 0,
+      scraped_at TEXT,
       view_count_updated_at TEXT,
       thumbnail_url TEXT DEFAULT '',
       thumbnail_concept TEXT DEFAULT '',
@@ -206,6 +212,8 @@ function initDb() {
       product_received INTEGER DEFAULT 0,
 
       episode_id INTEGER REFERENCES episodes(id) ON DELETE SET NULL,
+      sponsor_source TEXT DEFAULT 'manual' CHECK(sponsor_source IN ('manual', 'description', 'pinned_comment')),
+      detected_text TEXT DEFAULT '',
 
       notes TEXT DEFAULT '',
       next_action TEXT DEFAULT '',
@@ -214,9 +222,24 @@ function initDb() {
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
     );
+
+    -- ── Episode Phases ───────────────────────────────────────────────────
+    CREATE TABLE IF NOT EXISTS episode_phases (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      episode_id INTEGER NOT NULL REFERENCES episodes(id) ON DELETE CASCADE,
+      phase TEXT NOT NULL CHECK(phase IN ('preprod', 'shoot', 'post', 'publish')),
+      start_date TEXT NOT NULL,
+      end_date TEXT NOT NULL,
+      status TEXT DEFAULT 'planned' CHECK(status IN ('planned', 'in_progress', 'done')),
+      confidence REAL DEFAULT 1.0,
+      source TEXT DEFAULT 'manual' CHECK(source IN ('manual', 'inferred', 'youtube')),
+      created_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(episode_id, phase)
+    );
   `);
 
   migrateEpisodesSchema();
+  migrateSeriesSchema();
   migrateSponsorsSchema();
 }
 
@@ -235,8 +258,25 @@ function migrateEpisodesSchema() {
 
   addColumn('youtube_video_id', "TEXT DEFAULT ''");
   addColumn('view_count', 'INTEGER DEFAULT 0');
+  addColumn('like_count', 'INTEGER DEFAULT 0');
+  addColumn('comment_count', 'INTEGER DEFAULT 0');
+  addColumn('description', "TEXT DEFAULT ''");
+  addColumn('duration_seconds', 'INTEGER DEFAULT 0');
+  addColumn('scraped_at', 'TEXT');
   addColumn('view_count_updated_at', 'TEXT');
   addColumn('thumbnail_url', "TEXT DEFAULT ''");
+}
+
+function migrateSeriesSchema() {
+  if (!db) return;
+  const database = db;
+
+  const columns = database.prepare("PRAGMA table_info(series)").all() as Array<{ name: string }>;
+  const columnNames = new Set(columns.map(col => col.name));
+
+  if (!columnNames.has('country')) {
+    database.exec("ALTER TABLE series ADD COLUMN country TEXT DEFAULT ''");
+  }
 }
 
 function migrateSponsorsSchema() {
@@ -350,6 +390,8 @@ function migrateSponsorsSchema() {
         product_received INTEGER DEFAULT 0,
 
         episode_id INTEGER REFERENCES episodes(id) ON DELETE SET NULL,
+        sponsor_source TEXT DEFAULT 'manual' CHECK(sponsor_source IN ('manual', 'description', 'pinned_comment')),
+        detected_text TEXT DEFAULT '',
 
         notes TEXT DEFAULT '',
         next_action TEXT DEFAULT '',
@@ -378,6 +420,15 @@ function migrateSponsorsSchema() {
   } catch (err) {
     db.exec('ROLLBACK');
     throw err;
+  }
+
+  const spCols = db.prepare("PRAGMA table_info(sponsors)").all() as Array<{ name: string }>;
+  const spColNames = new Set(spCols.map(col => col.name));
+  if (!spColNames.has('sponsor_source')) {
+    db.exec("ALTER TABLE sponsors ADD COLUMN sponsor_source TEXT DEFAULT 'manual' CHECK(sponsor_source IN ('manual', 'description', 'pinned_comment'))");
+  }
+  if (!spColNames.has('detected_text')) {
+    db.exec("ALTER TABLE sponsors ADD COLUMN detected_text TEXT DEFAULT ''");
   }
 }
 
