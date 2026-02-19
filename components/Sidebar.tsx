@@ -7,7 +7,7 @@ import {
   LayoutGrid, Kanban, FileText, Search, Palette,
   GanttChart, Calendar, Clapperboard, Video,
   HandCoins, Users, ChevronDown, ChevronRight,
-  ExternalLink, ShieldCheck,
+  ExternalLink, ShieldCheck, Gavel, FolderOpen,
 } from 'lucide-react';
 
 interface NavSection {
@@ -20,6 +20,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const [productionOpen, setProductionOpen] = useState(true);
   const [pipelineOpen, setPipelineOpen] = useState(true);
+  const [projectsOpen, setProjectsOpen] = useState(true);
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
@@ -42,15 +43,24 @@ export function Sidebar() {
         { href: '/pipeline/people', icon: <Users size={16} />, label: 'People' },
       ],
     },
+    {
+      label: 'PROJECTS',
+      key: 'projects',
+      items: [
+        { href: 'http://localhost:3001', icon: <Gavel size={16} />, label: 'Auction Viewer', external: true },
+      ],
+    },
   ];
 
   const sectionOpen: Record<string, boolean> = {
     production: productionOpen,
     pipeline: pipelineOpen,
+    projects: projectsOpen,
   };
   const setOpen: Record<string, (v: boolean) => void> = {
     production: setProductionOpen,
     pipeline: setPipelineOpen,
+    projects: setProjectsOpen,
   };
 
   return (
