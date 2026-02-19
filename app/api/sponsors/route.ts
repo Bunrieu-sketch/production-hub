@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
   let query = `
     SELECT
       sponsors.*,
+      episodes.title as episode_title,
       episodes.view_count as episode_view_count,
       episodes.view_count_updated_at as episode_view_count_updated_at,
       episodes.youtube_video_id as episode_youtube_video_id,

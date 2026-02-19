@@ -1,137 +1,149 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import { useEffect, useMemo, useState } from 'react';
+import type { DatesSetArg, EventInput } from '@fullcalendar/core';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import listPlugin from '@fullcalendar/list';
 
-interface CalEvent {
-  id: string; date: string; title: string; type: string; color: string;
-}
+import '@fullcalendar/core/index.css';
+import '@fullcalendar/daygrid/index.css';
+import '@fullcalendar/timegrid/index.css';
+import '@fullcalendar/list/index.css';
 
-const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const FullCalendar = dynamic(() => import('@fullcalendar/react'), { ssr: false });
 
-const TYPE_COLORS: Record<string, string> = {
-  shoot: 'var(--accent)',
-  publish: 'var(--green)',
-  deadline: 'var(--orange)',
-  sponsor: 'var(--blue)',
-  milestone: 'var(--red)',
-};
+const LEGEND = [
+  { key: 'preprod', label: 'Preprod', color: '#58a6ff' },
+  { key: 'shoot', label: 'Shoot', color: '#a371f7' },
+  { key: 'post', label: 'Post', color: '#d29922' },
+  { key: 'publish', label: 'Publish', color: '#3fb950' },
+  { key: 'sponsor', label: 'Sponsor', color: '#58a6ff' },
+  { key: 'milestone', label: 'Milestone', color: '#f85149' },
+];
 
 export default function CalendarPage() {
-  const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth() + 1);
-  const [events, setEvents] = useState<CalEvent[]>([]);
+  const [events, setEvents] = useState<EventInput[]>([]);
+  const [range, setRange] = useState<{ start: string; end: string } | null>(null);
+
+  const plugins = useMemo(() => [dayGridPlugin, timeGridPlugin, listPlugin], []);
 
   useEffect(() => {
-    fetch(`/api/calendar?year=${year}&month=${month}`)
-      .then(r => r.json())
-      .then(setEvents);
-  }, [year, month]);
+    if (!range) return;
+    const controller = new AbortController();
+    const url = `/api/calendar?start=${encodeURIComponent(range.start)}&end=${encodeURIComponent(range.end)}`;
+    fetch(url, { signal: controller.signal })
+      .then(res => res.json())
+      .then(setEvents)
+      .catch(err => {
+        if (err?.name !== 'AbortError') console.error(err);
+      });
+    return () => controller.abort();
+  }, [range]);
 
-  const prevMonth = () => {
-    if (month === 1) { setYear(y => y - 1); setMonth(12); }
-    else setMonth(m => m - 1);
+  const handleDatesSet = (info: DatesSetArg) => {
+    setRange({ start: info.startStr, end: info.endStr });
   };
-  const nextMonth = () => {
-    if (month === 12) { setYear(y => y + 1); setMonth(1); }
-    else setMonth(m => m + 1);
-  };
-
-  const firstDay = new Date(year, month - 1, 1).getDay();
-  const daysInMonth = new Date(year, month, 0).getDate();
-  const cells: Array<{ day: number | null; events: CalEvent[] }> = [];
-
-  for (let i = 0; i < firstDay; i++) cells.push({ day: null, events: [] });
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr = `${year}-${month.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
-    const dayEvents = events.filter(e => e.date?.startsWith(dateStr));
-    cells.push({ day: d, events: dayEvents });
-  }
-
-  const today = now.toISOString().split('T')[0];
-  const monthName = new Date(year, month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <h1 style={{ fontSize: 22, fontWeight: 600 }}>Calendar</h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button className="btn btn-secondary" style={{ padding: '5px 8px' }} onClick={prevMonth}><ChevronLeft size={14} /></button>
-          <span style={{ fontSize: 14, fontWeight: 600, minWidth: 160, textAlign: 'center' }}>{monthName}</span>
-          <button className="btn btn-secondary" style={{ padding: '5px 8px' }} onClick={nextMonth}><ChevronRight size={14} /></button>
-          <button className="btn btn-secondary" style={{ fontSize: 12, padding: '5px 10px' }}
-            onClick={() => { setYear(now.getFullYear()); setMonth(now.getMonth() + 1); }}>
-            Today
-          </button>
-        </div>
       </div>
 
-      {/* Legend */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-        {Object.entries(TYPE_COLORS).map(([type, color]) => (
-          <div key={type} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text-dim)' }}>
-            <div style={{ width: 8, height: 8, borderRadius: 2, background: color }} />
-            {type.charAt(0).toUpperCase() + type.slice(1)}
+        {LEGEND.map(item => (
+          <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-dim)' }}>
+            <div style={{ width: 10, height: 10, borderRadius: 3, background: item.color }} />
+            {item.label}
           </div>
         ))}
       </div>
 
-      {/* Day headers */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, marginBottom: 1 }}>
-        {DAYS_OF_WEEK.map(d => (
-          <div key={d} style={{ padding: '6px 8px', fontSize: 11, fontWeight: 600, color: 'var(--text-dim)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            {d}
-          </div>
-        ))}
+      <div style={{ background: 'transparent' }}>
+        <FullCalendar
+          plugins={plugins}
+          initialView="dayGridMonth"
+          headerToolbar={{
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
+          }}
+          height="auto"
+          events={events}
+          datesSet={handleDatesSet}
+          dayMaxEventRows={4}
+          expandRows
+          nowIndicator
+        />
       </div>
 
-      {/* Calendar grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, background: 'var(--border)', border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
-        {cells.map((cell, i) => {
-          const dateStr = cell.day ? `${year}-${month.toString().padStart(2, '0')}-${cell.day.toString().padStart(2, '0')}` : '';
-          const isToday = dateStr === today;
-          return (
-            <div key={i} style={{
-              background: cell.day ? 'var(--card)' : 'var(--bg)',
-              minHeight: 90, padding: '6px 8px',
-              opacity: cell.day ? 1 : 0.3,
-            }}>
-              {cell.day && (
-                <>
-                  <div style={{
-                    fontSize: 12, fontWeight: isToday ? 700 : 400,
-                    color: isToday ? 'var(--accent)' : 'var(--text-dim)',
-                    marginBottom: 4, width: 22, height: 22,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    borderRadius: '50%',
-                    background: isToday ? 'rgba(163,113,247,0.2)' : 'transparent',
-                  }}>
-                    {cell.day}
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {cell.events.slice(0, 4).map(ev => (
-                      <div key={ev.id} title={ev.title} style={{
-                        fontSize: 10, padding: '1px 5px', borderRadius: 3,
-                        background: ev.color + '22',
-                        borderLeft: `2px solid ${ev.color}`,
-                        color: ev.color,
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        fontWeight: 500,
-                      }}>
-                        {ev.title}
-                      </div>
-                    ))}
-                    {cell.events.length > 4 && (
-                      <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>+{cell.events.length - 4} more</div>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      <style jsx global>{`
+        .fc {
+          --fc-page-bg-color: transparent;
+          --fc-neutral-bg-color: rgba(255, 255, 255, 0.03);
+          --fc-neutral-text-color: var(--text-dim);
+          --fc-border-color: var(--border);
+          --fc-today-bg-color: rgba(88, 166, 255, 0.12);
+          --fc-list-event-hover-bg-color: rgba(88, 166, 255, 0.12);
+          --fc-event-text-color: var(--text);
+          color: var(--text);
+        }
+
+        .fc .fc-toolbar-title {
+          color: var(--text);
+          font-size: 18px;
+          font-weight: 600;
+        }
+
+        .fc .fc-button {
+          background: var(--card);
+          border: 1px solid var(--border);
+          color: var(--text);
+          box-shadow: none;
+          text-transform: capitalize;
+        }
+
+        .fc .fc-button:hover,
+        .fc .fc-button:focus {
+          background: rgba(88, 166, 255, 0.12);
+          border-color: rgba(88, 166, 255, 0.6);
+          color: var(--text);
+        }
+
+        .fc .fc-button-primary:not(:disabled).fc-button-active,
+        .fc .fc-button-primary:not(:disabled):active {
+          background: rgba(88, 166, 255, 0.2);
+          border-color: rgba(88, 166, 255, 0.8);
+          color: var(--text);
+        }
+
+        .fc-theme-standard .fc-scrollgrid,
+        .fc-theme-standard td,
+        .fc-theme-standard th {
+          border-color: var(--border);
+        }
+
+        .fc .fc-daygrid-day,
+        .fc .fc-timegrid-slot {
+          background: transparent;
+        }
+
+        .fc .fc-col-header-cell-cushion,
+        .fc .fc-daygrid-day-number {
+          color: var(--text-dim);
+        }
+
+        .fc .fc-event,
+        .fc .fc-event .fc-event-main {
+          color: var(--text);
+        }
+
+        .fc .fc-list-event:hover td {
+          background: rgba(88, 166, 255, 0.08);
+        }
+      `}</style>
     </div>
   );
 }

@@ -1,63 +1,141 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 
+const COLORS = {
+  preprod: '#58a6ff',
+  shoot: '#a371f7',
+  post: '#d29922',
+  publish: '#3fb950',
+  sponsor: '#58a6ff',
+  milestone: '#f85149',
+};
+
+type CalendarEvent = {
+  id: string;
+  title: string;
+  start: string;
+  end?: string;
+  allDay: boolean;
+  backgroundColor: string;
+  borderColor: string;
+};
+
+function toDateString(value: string | null) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString().split('T')[0];
+}
+
+function addDays(dateStr: string, days: number) {
+  const date = new Date(dateStr);
+  date.setDate(date.getDate() + days);
+  return date.toISOString().split('T')[0];
+}
+
 export async function GET(req: NextRequest) {
   const db = getDb();
   const { searchParams } = new URL(req.url);
-  const year = searchParams.get('year') || new Date().getFullYear().toString();
-  const month = searchParams.get('month') || (new Date().getMonth() + 1).toString();
+  const startParam = searchParams.get('start');
+  const endParam = searchParams.get('end');
 
-  const startDate = `${year}-${month.padStart(2, '0')}-01`;
-  const endDate = new Date(parseInt(year), parseInt(month), 0).toISOString().split('T')[0];
+  const today = new Date();
+  const defaultStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+  const defaultEndExclusive = new Date(today.getFullYear(), today.getMonth() + 1, 1).toISOString().split('T')[0];
 
-  const events: Array<{ id: string; date: string; title: string; type: string; color: string }> = [];
+  const startDate = toDateString(startParam) || defaultStart;
+  const endDateExclusive = toDateString(endParam) || defaultEndExclusive;
+  const endDateInclusive = addDays(endDateExclusive, -1);
 
-  // Series shoot dates
-  const seriesShots = db.prepare(`
-    SELECT id, title, target_shoot_start, target_shoot_end FROM series
-    WHERE target_shoot_start BETWEEN ? AND ? OR actual_shoot_start BETWEEN ? AND ?
-  `).all(startDate, endDate, startDate, endDate) as Array<{ id: number; title: string; target_shoot_start: string }>;
+  const events: CalendarEvent[] = [];
 
-  for (const s of seriesShots) {
-    if (s.target_shoot_start) {
-      events.push({ id: `shoot-${s.id}`, date: s.target_shoot_start, title: `Shoot: ${s.title}`, type: 'shoot', color: 'var(--accent)' });
+  const phases = db.prepare(`
+    SELECT ep.id, ep.phase, ep.start_date, ep.end_date, e.title as episode_title
+    FROM episode_phases ep
+    JOIN episodes e ON ep.episode_id = e.id
+    WHERE ep.start_date <= ? AND ep.end_date >= ?
+  `).all(endDateInclusive, startDate) as Array<{
+    id: number;
+    phase: 'preprod' | 'shoot' | 'post' | 'publish';
+    start_date: string;
+    end_date: string;
+    episode_title: string;
+  }>;
+
+  for (const phase of phases) {
+    events.push({
+      id: `phase-${phase.id}`,
+      title: `${phase.phase.toUpperCase()}: ${phase.episode_title}`,
+      start: phase.start_date,
+      end: addDays(phase.end_date, 1),
+      allDay: true,
+      backgroundColor: COLORS[phase.phase],
+      borderColor: COLORS[phase.phase],
+    });
+  }
+
+  const sponsors = db.prepare(`
+    SELECT id, brand_name, script_due, live_date, payment_due_date
+    FROM sponsors
+    WHERE (script_due BETWEEN ? AND ?)
+       OR (live_date BETWEEN ? AND ?)
+       OR (payment_due_date BETWEEN ? AND ?)
+  `).all(startDate, endDateInclusive, startDate, endDateInclusive, startDate, endDateInclusive) as Array<{
+    id: number;
+    brand_name: string;
+    script_due: string | null;
+    live_date: string | null;
+    payment_due_date: string | null;
+  }>;
+
+  for (const sponsor of sponsors) {
+    if (sponsor.script_due) {
+      events.push({
+        id: `sponsor-script-${sponsor.id}`,
+        title: `Script due: ${sponsor.brand_name}`,
+        start: sponsor.script_due,
+        allDay: true,
+        backgroundColor: COLORS.sponsor,
+        borderColor: COLORS.sponsor,
+      });
+    }
+    if (sponsor.live_date) {
+      events.push({
+        id: `sponsor-live-${sponsor.id}`,
+        title: `Live: ${sponsor.brand_name}`,
+        start: sponsor.live_date,
+        allDay: true,
+        backgroundColor: COLORS.sponsor,
+        borderColor: COLORS.sponsor,
+      });
+    }
+    if (sponsor.payment_due_date) {
+      events.push({
+        id: `sponsor-pay-${sponsor.id}`,
+        title: `Payment due: ${sponsor.brand_name}`,
+        start: sponsor.payment_due_date,
+        allDay: true,
+        backgroundColor: COLORS.sponsor,
+        borderColor: COLORS.sponsor,
+      });
     }
   }
 
-  // Episode publish dates
-  const epPublish = db.prepare(`
-    SELECT e.id, e.title, e.publish_date FROM episodes e
-    WHERE e.publish_date BETWEEN ? AND ?
-  `).all(startDate, endDate) as Array<{ id: number; title: string; publish_date: string }>;
-
-  for (const e of epPublish) {
-    events.push({ id: `publish-${e.id}`, date: e.publish_date, title: `Publish: ${e.title}`, type: 'publish', color: 'var(--green)' });
-  }
-
-  // Sponsor deadlines
-  const sponsorDeadlines = db.prepare(`
-    SELECT id, brand_name, script_due, live_date FROM sponsors
-    WHERE script_due BETWEEN ? AND ? OR live_date BETWEEN ? AND ?
-  `).all(startDate, endDate, startDate, endDate) as Array<{ id: number; brand_name: string; script_due: string; live_date: string }>;
-
-  for (const s of sponsorDeadlines) {
-    if (s.script_due && s.script_due >= startDate && s.script_due <= endDate) {
-      events.push({ id: `script-${s.id}`, date: s.script_due, title: `Script: ${s.brand_name}`, type: 'deadline', color: 'var(--orange)' });
-    }
-    if (s.live_date && s.live_date >= startDate && s.live_date <= endDate) {
-      events.push({ id: `live-${s.id}`, date: s.live_date, title: `Live: ${s.brand_name}`, type: 'sponsor', color: 'var(--blue)' });
-    }
-  }
-
-  // Milestones
   const milestones = db.prepare(`
-    SELECT m.id, m.title, m.due_date, m.completed, s.title as series_title
-    FROM milestones m JOIN series s ON m.series_id = s.id
-    WHERE m.due_date BETWEEN ? AND ?
-  `).all(startDate, endDate) as Array<{ id: number; title: string; due_date: string; completed: number; series_title: string }>;
+    SELECT id, title, due_date
+    FROM milestones
+    WHERE due_date BETWEEN ? AND ?
+  `).all(startDate, endDateInclusive) as Array<{ id: number; title: string; due_date: string }>;
 
-  for (const m of milestones) {
-    events.push({ id: `ms-${m.id}`, date: m.due_date, title: m.title, type: 'milestone', color: m.completed ? 'var(--green)' : 'var(--red)' });
+  for (const milestone of milestones) {
+    events.push({
+      id: `milestone-${milestone.id}`,
+      title: `Milestone: ${milestone.title}`,
+      start: milestone.due_date,
+      allDay: true,
+      backgroundColor: COLORS.milestone,
+      borderColor: COLORS.milestone,
+    });
   }
 
   return NextResponse.json(events);

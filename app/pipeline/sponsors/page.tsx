@@ -17,8 +17,10 @@ interface Sponsor {
   invoice_amount: number; invoice_date: string;
   notes: string; next_action: string; next_action_due: string;
   offer_date: string; contract_date: string; episode_id: number | null;
+  sponsor_source?: 'manual' | 'description' | 'pinned_comment';
   cpm_rate: number | null; cpm_cap: number | null; mvg: number | null;
   views_at_30_days: number;
+  episode_title?: string | null;
   episode_view_count?: number | null;
   episode_view_count_updated_at?: string | null;
   episode_youtube_video_id?: string | null;
@@ -539,6 +541,32 @@ export default function SponsorsPage() {
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; }}
                   >
                     <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 3 }}>{sp.brand_name}</div>
+                    {(sp.episode_id || sp.sponsor_source === 'description' || sp.sponsor_source === 'pinned_comment') && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 4 }}>
+                        {sp.episode_id && (
+                          <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>
+                            Episode: <span style={{ color: 'var(--text)' }}>{sp.episode_title || 'Linked episode'}</span>
+                          </div>
+                        )}
+                        {(sp.sponsor_source === 'description' || sp.sponsor_source === 'pinned_comment') && (
+                          <span
+                            style={{
+                              fontSize: 9,
+                              fontWeight: 700,
+                              letterSpacing: '0.04em',
+                              textTransform: 'uppercase',
+                              padding: '2px 6px',
+                              borderRadius: 999,
+                              background: 'rgba(88,166,255,0.15)',
+                              color: 'var(--blue)',
+                              border: '1px solid rgba(88,166,255,0.35)',
+                            }}
+                          >
+                            Auto: {sp.sponsor_source === 'description' ? 'Description' : 'Pinned Comment'}
+                          </span>
+                        )}
+                      </div>
+                    )}
                     {sp.deal_type === 'cpm' ? (
                       <>
                         <div style={{ fontSize: 9, color: 'var(--accent)', fontWeight: 700, letterSpacing: '0.06em', marginBottom: 2 }}>CPM</div>
