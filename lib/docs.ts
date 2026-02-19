@@ -5,6 +5,7 @@ import matter from 'gray-matter';
 const WORKSPACE_ROOT = '/Users/montymac/.openclaw/workspace';
 const COMPETITOR_ROOT = path.resolve(WORKSPACE_ROOT, '..', 'competitor-tracker');
 const COMPETITOR_REPORTS = path.join(COMPETITOR_ROOT, 'reports');
+const HEALTH_REPORTS = path.join(WORKSPACE_ROOT, 'health-council', 'reports');
 
 export interface DocFile {
   id: string;
@@ -33,6 +34,9 @@ export function listDocuments(): DocFile[] {
   );
   docs.push(
     ...collectDocsInDir(COMPETITOR_REPORTS, 'intel', '📊 Competitor Intel', 'intel')
+  );
+  docs.push(
+    ...collectDocsInDir(HEALTH_REPORTS, 'health', '🏛️ Health Reports', 'health', true)
   );
 
   // Memory files (root of memory)
@@ -117,6 +121,8 @@ export function getDocument(docId: string): { id: string; content: string; size:
     filepath = path.join(WORKSPACE_ROOT, 'memory', 'research', filename);
   } else if (category === 'intel') {
     filepath = path.join(COMPETITOR_REPORTS, filename);
+  } else if (category === 'health') {
+    filepath = path.join(HEALTH_REPORTS, filename);
   } else if (category === 'root') {
     filepath = path.join(WORKSPACE_ROOT, filename);
   } else if (category === 'skills' || category === 'project') {
@@ -170,6 +176,8 @@ function getDocumentContent(doc: DocFile): string {
     filepath = path.join(WORKSPACE_ROOT, 'memory', 'research', filename);
   } else if (category === 'intel') {
     filepath = path.join(COMPETITOR_REPORTS, filename);
+  } else if (category === 'health') {
+    filepath = path.join(HEALTH_REPORTS, filename);
   } else if (category === 'root') {
     filepath = path.join(WORKSPACE_ROOT, filename);
   } else {
@@ -304,10 +312,14 @@ function safeReadDir(dir: string): string[] {
 function isAllowedPath(realFilepath: string): boolean {
   const realWorkspace = fs.realpathSync(WORKSPACE_ROOT);
   const realCompetitor = fs.existsSync(COMPETITOR_ROOT) ? fs.realpathSync(COMPETITOR_ROOT) : null;
+  const realHealth = fs.existsSync(HEALTH_REPORTS) ? fs.realpathSync(HEALTH_REPORTS) : null;
   if (realFilepath.startsWith(realWorkspace)) {
     return true;
   }
   if (realCompetitor && realFilepath.startsWith(realCompetitor)) {
+    return true;
+  }
+  if (realHealth && realFilepath.startsWith(realHealth)) {
     return true;
   }
   return false;

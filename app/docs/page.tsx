@@ -19,13 +19,14 @@ interface DocFile {
   snippet?: string;
 }
 
-const categoryOrder = ['briefs', 'chats', 'research', 'intel', 'memory', 'root', 'projects', 'skills'];
+const categoryOrder = ['briefs', 'chats', 'research', 'intel', 'health', 'memory', 'root', 'projects', 'skills'];
 const dateGroupOrder = ['Today', 'Yesterday', 'This Week', 'This Month', 'Older'];
 const filterOptions = [
   { id: 'all', label: 'All' },
   { id: 'briefs', label: 'Briefs' },
   { id: 'research', label: 'Research' },
   { id: 'intel', label: 'Intel' },
+  { id: 'health', label: 'Health' },
   { id: 'chats', label: 'Chats' }
 ];
 
