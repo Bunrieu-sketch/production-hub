@@ -1191,3 +1191,140 @@ textarea {
   background: rgba(248, 81, 73, 0.1);
   border-radius: 8px;
 }
+
+/* ── Frappe Gantt Dark Theme ──────────────────────────────────────────── */
+.gantt-container {
+  overflow: auto;
+}
+
+.gantt-container .gantt {
+  background: var(--card);
+}
+
+.gantt-container .grid-background {
+  fill: var(--card);
+}
+
+.gantt-container .grid-header {
+  fill: var(--bg);
+  stroke: var(--border);
+}
+
+.gantt-container .grid-row {
+  fill: var(--card);
+}
+
+.gantt-container .grid-row:nth-child(even) {
+  fill: var(--bg);
+}
+
+.gantt-container .row-line {
+  stroke: var(--border);
+}
+
+.gantt-container .tick {
+  stroke: var(--border);
+}
+
+.gantt-container .today-highlight {
+  fill: rgba(163, 113, 247, 0.08);
+}
+
+/* Bar defaults */
+.gantt-container .bar {
+  fill: var(--accent);
+  stroke: none;
+}
+
+.gantt-container .bar-progress {
+  fill: var(--accent-hover);
+}
+
+.gantt-container .bar-label {
+  fill: var(--text);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.gantt-container .bar-label.big {
+  fill: var(--text);
+  font-size: 11px;
+}
+
+/* Series parent bars */
+.gantt-container .gantt-parent .bar {
+  fill: #30363d;
+  rx: 4;
+}
+
+.gantt-container .gantt-parent .bar-progress {
+  fill: #484f58;
+}
+
+.gantt-container .gantt-parent .bar-label {
+  fill: var(--text);
+  font-weight: 700;
+  font-size: 12px;
+}
+
+/* Phase-specific bar colors */
+.gantt-container .phase-preprod .bar {
+  fill: #58a6ff;
+}
+
+.gantt-container .phase-preprod .bar-progress {
+  fill: #388bfd;
+}
+
+.gantt-container .phase-shoot .bar {
+  fill: #a371f7;
+}
+
+.gantt-container .phase-shoot .bar-progress {
+  fill: #8957e5;
+}
+
+.gantt-container .phase-post .bar {
+  fill: #d29922;
+}
+
+.gantt-container .phase-post .bar-progress {
+  fill: #bb8009;
+}
+
+.gantt-container .phase-publish .bar {
+  fill: #3fb950;
+}
+
+.gantt-container .phase-publish .bar-progress {
+  fill: #238636;
+}
+
+/* Header text */
+.gantt-container .upper-text,
+.gantt-container .lower-text {
+  fill: var(--text-dim);
+  font-size: 11px;
+}
+
+/* Popup */
+.gantt-container .popup-wrapper {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.gantt-container .popup-wrapper .title {
+  color: var(--text);
+}
+
+.gantt-container .popup-wrapper .subtitle {
+  color: var(--text-dim);
+}
+
+/* Arrow / dependency lines */
+.gantt-container .arrow {
+  stroke: var(--border);
+  fill: none;
+}
