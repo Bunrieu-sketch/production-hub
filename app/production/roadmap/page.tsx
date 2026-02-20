@@ -201,10 +201,16 @@ export default function RoadmapPage() {
     if (!data?.weeks?.length) return null;
     const fullStart = toUtcMs(data.weeks[0].start);
     const fullEnd = endExclusiveMs(data.weeks[data.weeks.length - 1].end);
+    // Find first series preprod start to anchor the view there
+    const firstSeriesStart = data.series.length
+      ? toUtcMs(data.series.reduce((earliest, s) => s.preprod.start < earliest ? s.preprod.start : earliest, data.series[0].preprod.start))
+      : fullStart;
     const DAY = 24 * 60 * 60 * 1000;
-    const visibleDays = viewMode === 'day' ? 21 : viewMode === 'week' ? 120 : 365;
-    const visibleEnd = Math.min(fullStart + visibleDays * DAY, fullEnd);
-    return { start: fullStart, end: fullEnd, visibleEnd };
+    const visibleDays = viewMode === 'day' ? 28 : viewMode === 'week' ? 120 : 365;
+    // Start view 3 days before first series
+    const viewStart = firstSeriesStart - (3 * DAY);
+    const viewEnd = Math.min(viewStart + visibleDays * DAY, fullEnd);
+    return { start: fullStart, end: fullEnd, viewStart, viewEnd };
   }, [data, viewMode]);
 
   const groups = useMemo<RoadmapGroup[]>(() => {
@@ -487,9 +493,11 @@ export default function RoadmapPage() {
             className="roadmap-timeline"
             groups={groups}
             items={items}
-            visibleTimeStart={timeBounds.start}
-            visibleTimeEnd={timeBounds.visibleEnd}
-            onTimeChange={(start, end, updateScrollCanvas) => updateScrollCanvas(start, end)}
+            key={`timeline-${viewMode}`}
+            defaultTimeStart={new Date(timeBounds.viewStart)}
+            defaultTimeEnd={new Date(timeBounds.viewEnd)}
+            minZoom={24 * 60 * 60 * 1000}
+            maxZoom={365 * 24 * 60 * 60 * 1000}
             sidebarWidth={280}
             rightSidebarWidth={0}
             lineHeight={lineHeight}
