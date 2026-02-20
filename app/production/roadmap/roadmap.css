@@ -53,110 +53,128 @@
   position: relative;
 }
 
-.roadmap-grid {
-  min-width: max-content;
+.roadmap-timeline {
+  background: var(--card);
+  color: var(--text);
 }
 
-.roadmap-row {
-  display: grid;
-  grid-auto-rows: var(--row-height, 26px);
-  position: relative;
-}
-
-.roadmap-header-row {
-  position: sticky;
-  top: 0;
-  z-index: 20;
+.roadmap-timeline .rct-outer {
   background: var(--card);
 }
 
-.roadmap-cell {
+.roadmap-timeline .rct-sidebar {
+  background: var(--card);
   border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  padding: 2px 6px;
-  font-size: 9px;
-  line-height: 1.1;
-  color: var(--text);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.roadmap-cell.header {
+.roadmap-timeline .rct-sidebar .rct-sidebar-row {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.roadmap-timeline .rct-sidebar .rct-sidebar-row.rct-sidebar-row-odd {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.roadmap-group-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.roadmap-group-track {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.roadmap-group-phase {
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   color: var(--text-dim);
+}
+
+.roadmap-sidebar-header {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.roadmap-calendar-header {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+}
+
+.roadmap-timeline .rct-dateHeader {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dim);
+  border-left: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.roadmap-timeline .rct-dateHeader-primary {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.roadmap-timeline .rct-vertical-lines .rct-vl {
+  border-left: 1px solid var(--border);
+}
+
+.roadmap-timeline .rct-vertical-lines .rct-vl.rct-day-6,
+.roadmap-timeline .rct-vertical-lines .rct-vl.rct-day-0 {
   background: rgba(255, 255, 255, 0.03);
 }
 
-.roadmap-cell.header.week {
-  justify-content: center;
-  text-transform: none;
-  letter-spacing: 0.02em;
+.roadmap-timeline .rct-horizontal-lines .rct-hl-even,
+.roadmap-timeline .rct-horizontal-lines .rct-hl-odd {
+  border-bottom: 1px solid var(--border);
 }
 
-.roadmap-left {
-  position: sticky;
-  left: 0;
-  z-index: 40;
-  background: var(--card);
-  box-shadow: 8px 0 12px rgba(0, 0, 0, 0.16);
+.roadmap-timeline .rct-horizontal-lines .rct-hl-odd {
+  background: rgba(255, 255, 255, 0.02);
 }
 
-.roadmap-left.phase {
-  left: var(--track-col, 110px);
-  z-index: 45;
+.roadmap-timeline .rct-item {
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-.roadmap-track-cell {
-  font-weight: 700;
-  font-size: 11px;
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.05);
-  min-width: var(--track-col, 110px);
-}
-
-.roadmap-phase-cell {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  background: rgba(255, 255, 255, 0.04);
-  min-width: var(--phase-col, 150px);
-}
-
-.roadmap-bar {
+.roadmap-timeline .rct-item .rct-item-content {
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
   font-size: 10px;
   color: #1b1b1b;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-left-width: 3px;
-  border-left-style: solid;
-  border-radius: 8px;
-  margin: 3px 4px;
+  height: 100%;
+  width: 100%;
   padding: 0 6px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  z-index: 5;
 }
 
-.roadmap-bar:hover {
-  filter: brightness(1.05);
+.roadmap-item.phase-editB .rct-item-content {
+  color: #2a1a4a;
 }
 
-.roadmap-bar.link {
-  text-decoration: none;
-  color: inherit;
+.roadmap-today-marker {
+  background: #ef4444;
+  width: 2px;
+  z-index: 60;
 }
 
 .roadmap-muted {

@@ -1,7 +1,17 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Timeline, {
+  DateHeader,
+  SidebarHeader,
+  TimelineHeaders,
+  TimelineMarkers,
+  CustomMarker,
+  type TimelineGroupBase,
+  type TimelineItemBase,
+} from 'react-calendar-timeline';
+import 'react-calendar-timeline/dist/style.css';
 import './roadmap.css';
 
 type Week = {
@@ -21,8 +31,24 @@ type RoadmapSeries = {
   producerIndex: number;
   preprod: { start: string; end: string };
   shoot: { start: string; end: string };
-  edits: Array<{ episodeId: number; title: string; start: string; end: string; editorSlot: number; index: number }>;
-  publishes: Array<{ episodeId: number; title: string; start: string; end: string; index: number; publishDate: string }>;
+  edits: Array<{
+    episodeId: number;
+    title: string;
+    start: string;
+    end: string;
+    editorSlot: number;
+    index: number;
+    episodeType: string;
+  }>;
+  publishes: Array<{
+    episodeId: number;
+    title: string;
+    start: string;
+    end: string;
+    index: number;
+    publishDate: string;
+    episodeType: string;
+  }>;
   block: { start: string; end: string };
 };
 
@@ -36,39 +62,44 @@ type RoadmapResponse = {
 
 type Person = { id: number; name: string };
 
-type Bar = {
-  key: string;
-  label: string;
-  bg: string;
-  border: string;
-  href?: string;
-  startIndex: number;
-  endIndex: number;
-  seriesColor?: string;
+type PhaseKey = 'preprod' | 'shoot' | 'editA' | 'editB' | 'publish';
+
+type ItemLinkMap = Map<string, string>;
+
+type RoadmapGroup = TimelineGroupBase & {
+  trackId: number;
+  phase: PhaseKey;
 };
 
-const PHASE_COLORS = {
+const PHASE_COLORS: Record<PhaseKey, string> = {
   preprod: '#F6C453',
   shoot: '#F59E0B',
   editA: '#8B5CF6',
   editB: '#C4B5FD',
   publish: '#34D399',
-} as const;
+};
 
-function toDate(dateStr: string) {
-  return new Date(`${dateStr}T00:00:00Z`);
+function toUtcMs(dateStr: string) {
+  return new Date(`${dateStr}T00:00:00Z`).getTime();
 }
 
-function clamp(value: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, value));
+function addDays(dateStr: string, days: number) {
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().split('T')[0];
 }
 
-function shortLabel(label: string, max = 24) {
+function endExclusiveMs(dateStr: string) {
+  return toUtcMs(addDays(dateStr, 1));
+}
+
+function shortLabel(label: string, max = 22) {
   if (label.length <= max) return label;
   return `${label.slice(0, max - 1)}…`;
 }
 
 export default function RoadmapPage() {
+  const router = useRouter();
   const [data, setData] = useState<RoadmapResponse | null>(null);
   const [producerMode, setProducerMode] = useState<1 | 2>(1);
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
@@ -79,6 +110,7 @@ export default function RoadmapPage() {
   const [producerB, setProducerB] = useState('');
   const [editorA, setEditorA] = useState('');
   const [editorB, setEditorB] = useState('');
+  const [today, setToday] = useState(() => Date.now());
 
   useEffect(() => {
     fetch('/api/people?role=producer')
@@ -110,6 +142,11 @@ export default function RoadmapPage() {
     }
   }, [editors, editorA, editorB]);
 
+  useEffect(() => {
+    const interval = setInterval(() => setToday(Date.now()), 60_000);
+    return () => clearInterval(interval);
+  }, []);
+
   const producerNameMap = useMemo(() => {
     const map = new Map<string, string>();
     producers.forEach((p) => map.set(String(p.id), p.name));
@@ -135,218 +172,183 @@ export default function RoadmapPage() {
     return [aName, bName];
   }, [editorA, editorB, editorNameMap]);
 
-  const weeks = data?.weeks || [];
-  const weekCount = weeks.length;
-  const baseWeekDate = weeks.length ? toDate(weeks[0].start).getTime() : 0;
+  const timeBounds = useMemo(() => {
+    if (!data?.weeks?.length) return null;
+    const start = toUtcMs(data.weeks[0].start);
+    const end = endExclusiveMs(data.weeks[data.weeks.length - 1].end);
+    return { start, end };
+  }, [data]);
 
-  const dateToIndex = (dateStr: string) => {
-    if (!weekCount) return 0;
-    const diff = (toDate(dateStr).getTime() - baseWeekDate) / (1000 * 60 * 60 * 24);
-    return clamp(Math.floor(diff / 7), 0, weekCount - 1);
-  };
-
-  const phaseColors = (phase: keyof typeof PHASE_COLORS) => {
-    const bg = PHASE_COLORS[phase];
-    return {
-      bg,
-      border: 'rgba(0, 0, 0, 0.12)',
-    };
-  };
-
-  const monthSpans = useMemo(() => {
-    if (!weeks.length) return [];
-    const spans: Array<{ label: string; span: number }> = [];
-    let current = weeks[0].monthLabel;
-    let span = 0;
-    for (const wk of weeks) {
-      if (wk.monthLabel !== current) {
-        spans.push({ label: current, span });
-        current = wk.monthLabel;
-        span = 1;
-      } else {
-        span += 1;
-      }
-    }
-    spans.push({ label: current, span });
-    return spans;
-  }, [weeks]);
-
-  const rows = useMemo(() => {
+  const groups = useMemo<RoadmapGroup[]>(() => {
     if (!data) return [];
-    const rowsAcc: Array<{
-      key: string;
-      trackId: number;
-      trackLabel: string;
-      phaseLabel: string;
-      cells: Array<null>;
-      bars: Bar[];
-      showTrackLabel: boolean;
-    }> = [];
 
-    const buildBars = (
-      entries: Array<{
-        start: string;
-        end: string;
-        label: string;
-        bg: string;
-        border: string;
-        href?: string;
-        key: string;
-        seriesColor?: string;
-      }>,
-    ) =>
-      entries.map((entry) => ({
-        ...entry,
-        startIndex: dateToIndex(entry.start),
-        endIndex: dateToIndex(entry.end),
-      }));
+    const buildTitle = (trackLabel: string, phaseLabel: string) => (
+      <div className="roadmap-group-title">
+        <div className="roadmap-group-track">{trackLabel}</div>
+        <div className="roadmap-group-phase">{phaseLabel}</div>
+      </div>
+    );
+
+    return data.tracks.flatMap((track) => {
+      const trackLabel = track.label;
+      return [
+        {
+          id: `track-${track.id}-preprod`,
+          title: buildTitle(trackLabel, 'Pre-Prod'),
+          trackId: track.id,
+          phase: 'preprod',
+          stackItems: true,
+        },
+        {
+          id: `track-${track.id}-shoot`,
+          title: buildTitle(trackLabel, 'Shoot'),
+          trackId: track.id,
+          phase: 'shoot',
+          stackItems: true,
+        },
+        {
+          id: `track-${track.id}-editA`,
+          title: buildTitle(trackLabel, `Edit A · ${editorNames[0] || 'Editor A'}`),
+          trackId: track.id,
+          phase: 'editA',
+          stackItems: true,
+        },
+        {
+          id: `track-${track.id}-editB`,
+          title: buildTitle(trackLabel, `Edit B · ${editorNames[1] || 'Editor B'}`),
+          trackId: track.id,
+          phase: 'editB',
+          stackItems: true,
+        },
+        {
+          id: `track-${track.id}-publish`,
+          title: buildTitle(trackLabel, 'Publish'),
+          trackId: track.id,
+          phase: 'publish',
+          stackItems: true,
+        },
+      ];
+    });
+  }, [data, editorNames]);
+
+  const { items, itemLinks } = useMemo(() => {
+    if (!data) return { items: [] as Array<TimelineItemBase<number>>, itemLinks: new Map<string, string>() };
+
+    const timelineItems: Array<TimelineItemBase<number>> = [];
+    const links: ItemLinkMap = new Map();
+
+    const makeItem = (params: {
+      id: string;
+      group: string;
+      label: string;
+      start: string;
+      end: string;
+      phase: PhaseKey;
+      seriesColor?: string;
+      href?: string;
+    }) => {
+      const { id, group, label, start, end, phase, seriesColor, href } = params;
+      const background = PHASE_COLORS[phase];
+      timelineItems.push({
+        id,
+        group,
+        title: label,
+        start_time: toUtcMs(start),
+        end_time: endExclusiveMs(end),
+        canMove: false,
+        canResize: false,
+        canChangeGroup: false,
+        itemProps: {
+          className: `roadmap-item phase-${phase}`,
+          title: label,
+          style: {
+            backgroundColor: background,
+            borderColor: 'rgba(0, 0, 0, 0.2)',
+            borderLeftColor: seriesColor || 'rgba(0, 0, 0, 0.2)',
+            borderLeftWidth: 3,
+            borderLeftStyle: 'solid',
+          },
+        },
+      });
+
+      if (href) links.set(id, href);
+    };
 
     data.tracks.forEach((track) => {
       const trackSeries = data.series
         .filter((s) => s.track === track.id)
         .sort((a, b) => a.preprod.start.localeCompare(b.preprod.start));
 
-      const preprodEntries = trackSeries.map((s) => {
-        const producer = producerNames[s.producerIndex] || producerNames[0] || 'Producer';
-        const colors = phaseColors('preprod');
-        return {
-          start: s.preprod.start,
-          end: s.preprod.end,
-          label: producer,
-          key: `preprod-${s.id}`,
-          seriesColor: s.color,
-          ...colors,
-        };
-      });
+      trackSeries.forEach((series) => {
+        const producer = producerNames[series.producerIndex] || producerNames[0] || 'Producer';
 
-      const shootEntries = trackSeries.map((s) => {
-        const colors = phaseColors('shoot');
-        return {
-          start: s.shoot.start,
-          end: s.shoot.end,
-          label: 'Andrew',
-          key: `shoot-${s.id}`,
-          seriesColor: s.color,
-          ...colors,
-        };
-      });
-
-      const editorAEntries: Array<{
-        start: string;
-        end: string;
-        label: string;
-        bg: string;
-        border: string;
-        href?: string;
-        key: string;
-        seriesColor?: string;
-      }> = [];
-      const editorBEntries: Array<{
-        start: string;
-        end: string;
-        label: string;
-        bg: string;
-        border: string;
-        href?: string;
-        key: string;
-        seriesColor?: string;
-      }> = [];
-      const publishEntries: Array<{
-        start: string;
-        end: string;
-        label: string;
-        bg: string;
-        border: string;
-        href?: string;
-        key: string;
-        seriesColor?: string;
-      }> = [];
-
-      trackSeries.forEach((s) => {
-        const publishColors = phaseColors('publish');
-
-        s.edits.forEach((edit) => {
-          const editColors = phaseColors(edit.editorSlot === 0 ? 'editA' : 'editB');
-          const entry = {
-            start: edit.start,
-            end: edit.end,
-            label: shortLabel(edit.title, 26),
-            href: `/production/episodes/${edit.episodeId}`,
-            key: `edit-${s.id}-${edit.episodeId}-${edit.editorSlot}`,
-            seriesColor: s.color,
-            ...editColors,
-          };
-          if (edit.editorSlot === 0) {
-            editorAEntries.push(entry);
-          } else {
-            editorBEntries.push(entry);
-          }
+        makeItem({
+          id: `preprod-${series.id}`,
+          group: `track-${track.id}-preprod`,
+          label: `Pre-Prod (${producer})`,
+          start: series.preprod.start,
+          end: series.preprod.end,
+          phase: 'preprod',
+          seriesColor: series.color,
         });
 
-        s.publishes.forEach((pub) => {
-          publishEntries.push({
+        makeItem({
+          id: `shoot-${series.id}`,
+          group: `track-${track.id}-shoot`,
+          label: 'Shoot (Andrew)',
+          start: series.shoot.start,
+          end: series.shoot.end,
+          phase: 'shoot',
+          seriesColor: series.color,
+        });
+
+        series.edits.forEach((edit) => {
+          const label = edit.episodeType === 'filler'
+            ? `TBD EP${edit.index + 1}`
+            : shortLabel(edit.title, 24);
+          const groupId = edit.editorSlot === 0 ? `track-${track.id}-editA` : `track-${track.id}-editB`;
+          const phase = edit.editorSlot === 0 ? 'editA' : 'editB';
+
+          makeItem({
+            id: `edit-${series.id}-${edit.episodeId}-${edit.editorSlot}`,
+            group: groupId,
+            label,
+            start: edit.start,
+            end: edit.end,
+            phase,
+            seriesColor: series.color,
+            href: `/production/episodes/${edit.episodeId}`,
+          });
+        });
+
+        series.publishes.forEach((pub) => {
+          makeItem({
+            id: `publish-${series.id}-${pub.episodeId}`,
+            group: `track-${track.id}-publish`,
+            label: `EP${pub.index + 1}`,
             start: pub.start,
             end: pub.end,
-            label: `EP${pub.index + 1}`,
+            phase: 'publish',
+            seriesColor: series.color,
             href: `/production/episodes/${pub.episodeId}`,
-            key: `publish-${s.id}-${pub.episodeId}`,
-            seriesColor: s.color,
-            ...publishColors,
           });
         });
       });
-
-      rowsAcc.push({
-        key: `track-${track.id}-preprod`,
-        trackId: track.id,
-        trackLabel: track.label,
-        phaseLabel: 'Pre-Prod',
-        cells: Array.from({ length: weekCount }).map(() => null),
-        bars: buildBars(preprodEntries),
-        showTrackLabel: true,
-      });
-      rowsAcc.push({
-        key: `track-${track.id}-shoot`,
-        trackId: track.id,
-        trackLabel: track.label,
-        phaseLabel: 'Shooting',
-        cells: Array.from({ length: weekCount }).map(() => null),
-        bars: buildBars(shootEntries),
-        showTrackLabel: false,
-      });
-      rowsAcc.push({
-        key: `track-${track.id}-editor-a`,
-        trackId: track.id,
-        trackLabel: track.label,
-        phaseLabel: `Editor A · ${editorNames[0] || 'Editor A'}`,
-        cells: Array.from({ length: weekCount }).map(() => null),
-        bars: buildBars(editorAEntries),
-        showTrackLabel: false,
-      });
-      rowsAcc.push({
-        key: `track-${track.id}-editor-b`,
-        trackId: track.id,
-        trackLabel: track.label,
-        phaseLabel: `Editor B · ${editorNames[1] || 'Editor B'}`,
-        cells: Array.from({ length: weekCount }).map(() => null),
-        bars: buildBars(editorBEntries),
-        showTrackLabel: false,
-      });
-      rowsAcc.push({
-        key: `track-${track.id}-publish`,
-        trackId: track.id,
-        trackLabel: track.label,
-        phaseLabel: 'Publishing',
-        cells: Array.from({ length: weekCount }).map(() => null),
-        bars: buildBars(publishEntries),
-        showTrackLabel: false,
-      });
     });
 
-    return rowsAcc;
-  }, [data, weekCount, producerNames, editorNames]);
+    return { items: timelineItems, itemLinks: links };
+  }, [data, producerNames]);
 
-  const gridTemplateColumns = `var(--track-col, 110px) var(--phase-col, 150px) repeat(${weekCount}, var(--week-col, 44px))`;
+  const handleItemClick = useCallback(
+    (itemId: number | string) => {
+      const href = itemLinks.get(String(itemId));
+      if (href) router.push(href);
+    },
+    [itemLinks, router]
+  );
+
+  const lineHeight = viewMode === 'month' ? 26 : 32;
+  const itemHeightRatio = viewMode === 'month' ? 0.55 : 0.7;
 
   return (
     <div className="roadmap-page">
@@ -442,92 +444,46 @@ export default function RoadmapPage() {
         </div>
       </div>
 
-      {!data || !weeks.length ? (
+      {!data || !timeBounds ? (
         <div className="roadmap-muted">No roadmap data available yet.</div>
       ) : (
-        <div
-          className="roadmap-scroll"
-          style={
-            {
-              '--week-col': viewMode === 'month' ? '18px' : '44px',
-              '--row-height': viewMode === 'month' ? '22px' : '26px',
-              '--track-col': '110px',
-              '--phase-col': '150px',
-            } as React.CSSProperties
-          }
-        >
-          <div className="roadmap-grid">
-            <div className="roadmap-row roadmap-header-row" style={{ gridTemplateColumns }}>
-              <div className="roadmap-cell header roadmap-left roadmap-track-cell">Track</div>
-              <div className="roadmap-cell header roadmap-left phase roadmap-phase-cell">Phase</div>
-              {monthSpans.map((span, idx) => (
-                <div
-                  key={`${span.label}-${idx}`}
-                  className="roadmap-cell header"
-                  style={{ gridColumn: `span ${span.span}` }}
-                >
-                  {span.label}
-                </div>
-              ))}
-            </div>
-
-            {viewMode === 'week' && (
-              <div className="roadmap-row roadmap-header-row" style={{ gridTemplateColumns }}>
-                <div className="roadmap-cell header roadmap-left roadmap-track-cell"> </div>
-                <div className="roadmap-cell header roadmap-left phase roadmap-phase-cell"> </div>
-                {weeks.map((wk) => (
-                  <div key={wk.index} className="roadmap-cell header week">
-                    {new Date(`${wk.start}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+        <div className="roadmap-scroll">
+          <Timeline
+            className="roadmap-timeline"
+            groups={groups}
+            items={items}
+            defaultTimeStart={new Date(timeBounds.start)}
+            defaultTimeEnd={new Date(timeBounds.end)}
+            sidebarWidth={240}
+            rightSidebarWidth={0}
+            lineHeight={lineHeight}
+            itemHeightRatio={itemHeightRatio}
+            stackItems
+            canMove={false}
+            canResize={false}
+            canChangeGroup={false}
+            itemTouchSendsClick
+            onItemClick={handleItemClick}
+          >
+            <TimelineHeaders className="roadmap-headers" calendarHeaderClassName="roadmap-calendar-header">
+              <SidebarHeader>
+                {({ getRootProps }) => (
+                  <div {...getRootProps()} className="roadmap-sidebar-header">
+                    Track / Phase
                   </div>
-                ))}
-              </div>
-            )}
-
-            {rows.map((row) => (
-              <div key={row.key} className="roadmap-row" style={{ gridTemplateColumns }}>
-                <div className="roadmap-cell roadmap-left roadmap-track-cell">
-                  {row.showTrackLabel ? row.trackLabel : ''}
-                </div>
-                <div className="roadmap-cell roadmap-left phase roadmap-phase-cell">
-                  {row.phaseLabel}
-                </div>
-                {row.cells.map((_, index) => (
-                  <div key={`cell-${row.key}-${index}`} className="roadmap-cell" />
-                ))}
-                {row.bars.map((bar) => {
-                  const startCol = 3 + bar.startIndex;
-                  const endCol = 3 + bar.endIndex + 1;
-                  const barStyle: React.CSSProperties = {
-                    gridColumn: `${startCol} / ${endCol}`,
-                    backgroundColor: bar.bg,
-                    borderColor: bar.border,
-                    borderLeftColor: bar.seriesColor || bar.border,
-                  };
-                  if (bar.href) {
-                    return (
-                      <Link
-                        key={bar.key}
-                        href={bar.href}
-                        className="roadmap-bar link"
-                        style={barStyle}
-                      >
-                        {bar.label}
-                      </Link>
-                    );
-                  }
-                  return (
-                    <div
-                      key={bar.key}
-                      className="roadmap-bar"
-                      style={barStyle}
-                    >
-                      {bar.label}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
+                )}
+              </SidebarHeader>
+              <DateHeader unit="month" labelFormat="MMM" />
+              <DateHeader unit="week" labelFormat="MMM D" />
+            </TimelineHeaders>
+            <TimelineMarkers>
+              <CustomMarker date={today}>
+                {({ styles }) => (
+                  <div style={styles} className="roadmap-today-marker" />
+                )}
+              </CustomMarker>
+            </TimelineMarkers>
+          </Timeline>
         </div>
       )}
     </div>
