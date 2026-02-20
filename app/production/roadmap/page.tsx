@@ -79,18 +79,21 @@ const PHASE_COLORS: Record<PhaseKey, string> = {
   publish: '#34D399',
 };
 
-function toUtcMs(dateStr: string) {
-  return new Date(`${dateStr}T00:00:00Z`).getTime();
+/** Use local midnight so bars snap to day column boundaries */
+function toLocalMs(dateStr: string) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d).getTime();
 }
 
 function addDays(dateStr: string, days: number) {
-  const d = new Date(`${dateStr}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().split('T')[0];
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d + days);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
 }
 
+/** End of day = start of next day (exclusive) */
 function endExclusiveMs(dateStr: string) {
-  return toUtcMs(addDays(dateStr, 1));
+  return toLocalMs(addDays(dateStr, 1));
 }
 
 function shortLabel(label: string, max = 22) {
@@ -199,11 +202,11 @@ export default function RoadmapPage() {
 
   const timeBounds = useMemo(() => {
     if (!data?.weeks?.length) return null;
-    const fullStart = toUtcMs(data.weeks[0].start);
+    const fullStart = toLocalMs(data.weeks[0].start);
     const fullEnd = endExclusiveMs(data.weeks[data.weeks.length - 1].end);
     // Find first series preprod start to anchor the view there
     const firstSeriesStart = data.series.length
-      ? toUtcMs(data.series.reduce((earliest, s) => s.preprod.start < earliest ? s.preprod.start : earliest, data.series[0].preprod.start))
+      ? toLocalMs(data.series.reduce((earliest, s) => s.preprod.start < earliest ? s.preprod.start : earliest, data.series[0].preprod.start))
       : fullStart;
     const DAY = 24 * 60 * 60 * 1000;
     const visibleDays = viewMode === 'day' ? 28 : viewMode === 'week' ? 120 : 365;
@@ -288,7 +291,7 @@ export default function RoadmapPage() {
         id,
         group,
         title: label,
-        start_time: toUtcMs(start),
+        start_time: toLocalMs(start),
         end_time: endExclusiveMs(end),
         canMove: false,
         canResize: false,
