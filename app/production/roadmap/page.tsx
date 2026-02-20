@@ -127,7 +127,7 @@ export default function RoadmapPage() {
   const router = useRouter();
   const [data, setData] = useState<RoadmapResponse | null>(null);
   const [producerMode, setProducerMode] = useState<1 | 2>(1);
-  const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
+  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week');
   const [producers, setProducers] = useState<Person[]>([]);
   const [editors, setEditors] = useState<Person[]>([]);
   const [producerDefault, setProducerDefault] = useState('');
@@ -201,11 +201,11 @@ export default function RoadmapPage() {
     if (!data?.weeks?.length) return null;
     const fullStart = toUtcMs(data.weeks[0].start);
     const fullEnd = endExclusiveMs(data.weeks[data.weeks.length - 1].end);
-    // Default view: ~4 months from start (not full year) for readability
-    const fourMonths = fullStart + (120 * 24 * 60 * 60 * 1000);
-    const visibleEnd = Math.min(fourMonths, fullEnd);
+    const DAY = 24 * 60 * 60 * 1000;
+    const visibleDays = viewMode === 'day' ? 21 : viewMode === 'week' ? 120 : 365;
+    const visibleEnd = Math.min(fullStart + visibleDays * DAY, fullEnd);
     return { start: fullStart, end: fullEnd, visibleEnd };
-  }, [data]);
+  }, [data, viewMode]);
 
   const groups = useMemo<RoadmapGroup[]>(() => {
     if (!data) return [];
@@ -382,7 +382,7 @@ export default function RoadmapPage() {
     [itemLinks, router]
   );
 
-  const lineHeight = viewMode === 'month' ? 36 : 44;
+  const lineHeight = viewMode === 'month' ? 36 : viewMode === 'day' ? 48 : 44;
   const itemHeightRatio = viewMode === 'month' ? 0.7 : 0.8;
 
   return (
@@ -401,14 +401,14 @@ export default function RoadmapPage() {
           <div className="control-group">
             <label>Zoom</label>
             <div className="roadmap-toggle">
-              {(['week', 'month'] as const).map((mode) => (
+              {(['day', 'week', 'month'] as const).map((mode) => (
                 <button
                   key={mode}
                   className={`btn ${viewMode === mode ? 'btn-primary' : 'btn-secondary'}`}
                   style={{ padding: '4px 10px', fontSize: 11 }}
                   onClick={() => setViewMode(mode)}
                 >
-                  {mode === 'week' ? 'Week' : 'Month'}
+                  {mode === 'day' ? 'Day' : mode === 'week' ? 'Week' : 'Month'}
                 </button>
               ))}
             </div>
@@ -487,8 +487,9 @@ export default function RoadmapPage() {
             className="roadmap-timeline"
             groups={groups}
             items={items}
-            defaultTimeStart={new Date(timeBounds.start)}
-            defaultTimeEnd={new Date(timeBounds.visibleEnd)}
+            visibleTimeStart={timeBounds.start}
+            visibleTimeEnd={timeBounds.visibleEnd}
+            onTimeChange={(start, end, updateScrollCanvas) => updateScrollCanvas(start, end)}
             sidebarWidth={280}
             rightSidebarWidth={0}
             lineHeight={lineHeight}
@@ -509,7 +510,11 @@ export default function RoadmapPage() {
                 )}
               </SidebarHeader>
               <DateHeader unit="month" labelFormat="MMM" />
-              <DateHeader unit="week" labelFormat="MMM D" />
+              {viewMode === 'day' ? (
+                <DateHeader unit="day" labelFormat="D" />
+              ) : (
+                <DateHeader unit="week" labelFormat="MMM D" />
+              )}
             </TimelineHeaders>
             <TimelineMarkers>
               <CustomMarker date={today}>
