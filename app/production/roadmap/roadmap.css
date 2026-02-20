@@ -53,6 +53,7 @@
   position: relative;
 }
 
+/* ── Timeline base ── */
 .roadmap-timeline {
   background: var(--card);
   color: var(--text);
@@ -62,52 +63,72 @@
   background: var(--card);
 }
 
+/* ── Sidebar (left labels) ── */
 .roadmap-timeline .rct-sidebar {
   background: var(--card);
-  border-right: 1px solid var(--border);
+  border-right: 2px solid var(--border);
+  z-index: 80 !important;
 }
 
 .roadmap-timeline .rct-sidebar .rct-sidebar-row {
-  padding: 6px 10px;
+  padding: 4px 12px;
   border-bottom: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--card);
+  display: flex;
+  align-items: center;
 }
 
 .roadmap-timeline .rct-sidebar .rct-sidebar-row.rct-sidebar-row-odd {
-  background: rgba(255, 255, 255, 0.035);
+  background: rgba(255, 255, 255, 0.02);
 }
 
+/* Group title layout */
 .roadmap-group-title {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
+  overflow: hidden;
 }
 
 .roadmap-group-track {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.5;
 }
 
 .roadmap-group-phase {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
   color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .roadmap-sidebar-header {
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--text-dim);
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.05);
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--border);
+  background: var(--card) !important;
 }
 
+/* Kill the red background on the header corner */
+.roadmap-timeline .rct-header-root {
+  background: var(--card) !important;
+}
+
+.roadmap-timeline .rct-sidebar-header {
+  background: var(--card) !important;
+}
+
+/* ── Calendar headers ── */
 .roadmap-calendar-header {
   background: var(--card);
   border-bottom: 1px solid var(--border);
@@ -119,23 +140,19 @@
   border-left: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
   font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
 }
 
 .roadmap-timeline .rct-dateHeader-primary {
   background: rgba(255, 255, 255, 0.08);
   color: var(--text);
   font-weight: 700;
+  font-size: 12px;
 }
 
+/* ── Grid lines ── */
 .roadmap-timeline .rct-vertical-lines .rct-vl {
-  border-left: 1px solid var(--border);
-}
-
-.roadmap-timeline .rct-vertical-lines .rct-vl.rct-day-6,
-.roadmap-timeline .rct-vertical-lines .rct-vl.rct-day-0 {
-  background: rgba(255, 255, 255, 0.03);
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .roadmap-timeline .rct-horizontal-lines .rct-hl-even,
@@ -144,24 +161,26 @@
 }
 
 .roadmap-timeline .rct-horizontal-lines .rct-hl-odd {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.015);
 }
 
+/* ── Items (bars) ── */
 .roadmap-timeline .rct-item {
-  border-radius: 8px;
+  border-radius: 6px;
   overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .roadmap-timeline .rct-item .rct-item-content {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  font-size: 10px;
-  color: #1b1b1b;
+  font-weight: 700;
+  font-size: 12px;
+  color: #1a1a1a;
   height: 100%;
   width: 100%;
-  padding: 0 6px;
+  padding: 0 10px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -171,6 +190,13 @@
   color: #2a1a4a;
 }
 
+.roadmap-item.phase-publish .rct-item-content {
+  color: #0a3a1a;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+/* ── Today marker ── */
 .roadmap-today-marker {
   background: #ef4444;
   width: 2px;
@@ -182,4 +208,17 @@
   font-size: 12px;
   padding: 32px;
   text-align: center;
+}
+
+/* ── Track separator: add a thicker border between tracks (every 5th row) ── */
+.roadmap-timeline .rct-sidebar .rct-sidebar-row:nth-child(5n+1) {
+  border-top: 3px solid rgba(255, 255, 255, 0.15);
+}
+.roadmap-timeline .rct-horizontal-lines > div:nth-child(5n+1) {
+  border-top: 3px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Ensure sidebar rows clip their content */
+.roadmap-timeline .rct-sidebar .rct-sidebar-row {
+  overflow: hidden !important;
 }

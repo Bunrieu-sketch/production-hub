@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutGrid, Kanban, FileText, Search, Palette,
-  GanttChart, Calendar, Clapperboard, Video,
+  GanttChart, Calendar, Clapperboard, Video, Route,
   HandCoins, Users, ChevronDown, ChevronRight,
   ExternalLink, ShieldCheck, Gavel, FolderOpen,
 } from 'lucide-react';
@@ -30,6 +30,7 @@ export function Sidebar() {
       key: 'production',
       items: [
         { href: '/production/timeline', icon: <GanttChart size={16} />, label: 'Timeline' },
+        { href: '/production/roadmap', icon: <Route size={16} />, label: 'Roadmap' },
         { href: '/production/calendar', icon: <Calendar size={16} />, label: 'Calendar' },
         { href: '/production/series', icon: <Clapperboard size={16} />, label: 'Series' },
         { href: '/production/episodes', icon: <Video size={16} />, label: 'Episodes' },

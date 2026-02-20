@@ -98,6 +98,31 @@ function shortLabel(label: string, max = 22) {
   return `${label.slice(0, max - 1)}…`;
 }
 
+/** Extract the "subject" from a long episode title for compact display.
+ *  e.g., "Hunting Python in the Indonesian Jungle" -> "Python"
+ *        "I Hunted Red Deer in the Scottish Highlands" -> "Red Deer"
+ *        "Spider Fighting: The Philippines' Underground..." -> "Spider Fighting"
+ */
+function shortSubject(title: string): string {
+  // If it has a colon, use the part before it
+  if (title.includes(':')) {
+    const before = title.split(':')[0].trim();
+    // Remove common prefixes
+    return before
+      .replace(/^(I\s+)?(Visited|Rode|Made|Hunted)\s+/i, '')
+      .replace(/^The\s+/i, '')
+      .trim()
+      .slice(0, 20);
+  }
+  // Remove common filler words and try to get the subject
+  const cleaned = title
+    .replace(/^(I\s+)?(Visited|Rode|Made|Hunted)\s+/i, '')
+    .replace(/^The\s+/i, '')
+    .replace(/\s+(in|on|of|from|with|the|and)\s+.*/i, '')
+    .trim();
+  return cleaned.length > 20 ? cleaned.slice(0, 19) + '…' : cleaned;
+}
+
 export default function RoadmapPage() {
   const router = useRouter();
   const [data, setData] = useState<RoadmapResponse | null>(null);
@@ -174,18 +199,22 @@ export default function RoadmapPage() {
 
   const timeBounds = useMemo(() => {
     if (!data?.weeks?.length) return null;
-    const start = toUtcMs(data.weeks[0].start);
-    const end = endExclusiveMs(data.weeks[data.weeks.length - 1].end);
-    return { start, end };
+    const fullStart = toUtcMs(data.weeks[0].start);
+    const fullEnd = endExclusiveMs(data.weeks[data.weeks.length - 1].end);
+    // Default view: ~4 months from start (not full year) for readability
+    const fourMonths = fullStart + (120 * 24 * 60 * 60 * 1000);
+    const visibleEnd = Math.min(fourMonths, fullEnd);
+    return { start: fullStart, end: fullEnd, visibleEnd };
   }, [data]);
 
   const groups = useMemo<RoadmapGroup[]>(() => {
     if (!data) return [];
 
-    const buildTitle = (trackLabel: string, phaseLabel: string) => (
+    const buildTitle = (trackLabel: string, phaseLabel: string, isFirst: boolean) => (
       <div className="roadmap-group-title">
-        <div className="roadmap-group-track">{trackLabel}</div>
-        <div className="roadmap-group-phase">{phaseLabel}</div>
+        <div className="roadmap-group-phase">
+          {isFirst ? `${trackLabel} · ${phaseLabel}` : phaseLabel}
+        </div>
       </div>
     );
 
@@ -194,37 +223,37 @@ export default function RoadmapPage() {
       return [
         {
           id: `track-${track.id}-preprod`,
-          title: buildTitle(trackLabel, 'Pre-Prod'),
+          title: buildTitle(trackLabel, 'Pre-Production', true),
           trackId: track.id,
-          phase: 'preprod',
+          phase: 'preprod' as PhaseKey,
           stackItems: true,
         },
         {
           id: `track-${track.id}-shoot`,
-          title: buildTitle(trackLabel, 'Shoot'),
+          title: buildTitle(trackLabel, 'Shooting', false),
           trackId: track.id,
-          phase: 'shoot',
+          phase: 'shoot' as PhaseKey,
           stackItems: true,
         },
         {
           id: `track-${track.id}-editA`,
-          title: buildTitle(trackLabel, `Edit A · ${editorNames[0] || 'Editor A'}`),
+          title: buildTitle(trackLabel, `Editing — ${editorNames[0] || 'Editor A'}`, false),
           trackId: track.id,
-          phase: 'editA',
+          phase: 'editA' as PhaseKey,
           stackItems: true,
         },
         {
           id: `track-${track.id}-editB`,
-          title: buildTitle(trackLabel, `Edit B · ${editorNames[1] || 'Editor B'}`),
+          title: buildTitle(trackLabel, `Editing — ${editorNames[1] || 'Editor B'}`, false),
           trackId: track.id,
-          phase: 'editB',
+          phase: 'editB' as PhaseKey,
           stackItems: true,
         },
         {
           id: `track-${track.id}-publish`,
-          title: buildTitle(trackLabel, 'Publish'),
+          title: buildTitle(trackLabel, 'Publishing', false),
           trackId: track.id,
-          phase: 'publish',
+          phase: 'publish' as PhaseKey,
           stackItems: true,
         },
       ];
@@ -282,10 +311,16 @@ export default function RoadmapPage() {
       trackSeries.forEach((series) => {
         const producer = producerNames[series.producerIndex] || producerNames[0] || 'Producer';
 
+        // Use short series name for bar labels
+        const seriesShort = series.title
+          .replace(/\s*[—–-]\s*.+$/, '')  // "Indonesia — Sumba & Surrounds" -> "Indonesia"
+          .replace(/\s*&\s*.+$/, '')       // strip trailing "& ..."
+          .trim();
+
         makeItem({
           id: `preprod-${series.id}`,
           group: `track-${track.id}-preprod`,
-          label: `Pre-Prod (${producer})`,
+          label: `${seriesShort} (${producer})`,
           start: series.preprod.start,
           end: series.preprod.end,
           phase: 'preprod',
@@ -295,7 +330,7 @@ export default function RoadmapPage() {
         makeItem({
           id: `shoot-${series.id}`,
           group: `track-${track.id}-shoot`,
-          label: 'Shoot (Andrew)',
+          label: `${seriesShort} (Andrew)`,
           start: series.shoot.start,
           end: series.shoot.end,
           phase: 'shoot',
@@ -305,7 +340,7 @@ export default function RoadmapPage() {
         series.edits.forEach((edit) => {
           const label = edit.episodeType === 'filler'
             ? `TBD EP${edit.index + 1}`
-            : shortLabel(edit.title, 24);
+            : shortSubject(edit.title);
           const groupId = edit.editorSlot === 0 ? `track-${track.id}-editA` : `track-${track.id}-editB`;
           const phase = edit.editorSlot === 0 ? 'editA' : 'editB';
 
@@ -347,8 +382,8 @@ export default function RoadmapPage() {
     [itemLinks, router]
   );
 
-  const lineHeight = viewMode === 'month' ? 26 : 32;
-  const itemHeightRatio = viewMode === 'month' ? 0.55 : 0.7;
+  const lineHeight = viewMode === 'month' ? 36 : 44;
+  const itemHeightRatio = viewMode === 'month' ? 0.7 : 0.8;
 
   return (
     <div className="roadmap-page">
@@ -453,8 +488,8 @@ export default function RoadmapPage() {
             groups={groups}
             items={items}
             defaultTimeStart={new Date(timeBounds.start)}
-            defaultTimeEnd={new Date(timeBounds.end)}
-            sidebarWidth={240}
+            defaultTimeEnd={new Date(timeBounds.visibleEnd)}
+            sidebarWidth={280}
             rightSidebarWidth={0}
             lineHeight={lineHeight}
             itemHeightRatio={itemHeightRatio}
