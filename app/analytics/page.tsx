@@ -9,9 +9,6 @@ type TopVideoRow = {
   views: number;
   watchTimeHours: number;
   subscribers: number;
-  revenue: number;
-  impressions: number;
-  ctr: number;
 };
 
 type GeoRow = {
@@ -31,7 +28,6 @@ type AnalyticsData = {
   subscribers: number;
   views: number;
   watch_time_hours: number;
-  estimated_revenue: number;
   top_videos: TopVideoRow[];
   traffic_sources: {
     totals?: number;
@@ -63,10 +59,6 @@ function formatCompact(n: number) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return String(n);
-}
-
-function formatMoney(n: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n || 0);
 }
 
 function formatPct(n: number) {
