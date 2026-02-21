@@ -351,7 +351,6 @@ export default function AnalyticsPage() {
                   <th style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)' }}>Age</th>
                   <th style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', textAlign: 'right' }}>Male</th>
                   <th style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', textAlign: 'right' }}>Female</th>
-                  <th style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', textAlign: 'right' }}>Other</th>
                 </tr>
               </thead>
               <tbody>
@@ -359,20 +358,18 @@ export default function AnalyticsPage() {
                   const row = data.demographics[age] || {};
                   const male = row.male ?? row.MALE ?? 0;
                   const female = row.female ?? row.FEMALE ?? 0;
-                  const other = row.genderUserSpecified ?? row.user_specified ?? 0;
                   const label = age.replace('age', '').replace('-', '–').replace('65–', '65+');
                   return (
                     <tr key={age}>
                       <td style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)' }}>{label}</td>
                       <td style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', textAlign: 'right' }}>{male.toFixed(1)}%</td>
                       <td style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', textAlign: 'right' }}>{female.toFixed(1)}%</td>
-                      <td style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', textAlign: 'right' }}>{other.toFixed(1)}%</td>
                     </tr>
                   );
                 })}
                 {!demographicAges.length && (
                   <tr>
-                    <td colSpan={4} style={{ padding: 12, color: 'var(--text-dim)' }}>No demographics data yet.</td>
+                    <td colSpan={3} style={{ padding: 12, color: 'var(--text-dim)' }}>No demographics data yet.</td>
                   </tr>
                 )}
               </tbody>
