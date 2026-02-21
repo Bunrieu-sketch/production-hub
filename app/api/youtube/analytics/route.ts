@@ -66,18 +66,55 @@ async function fetchJson(url: string, init?: RequestInit) {
   const res = await fetch(url, init);
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`HTTP ${res.status} ${text}`);
+    throw new Error(`HTTP ${res.status} [${url.split('?')[0]}] ${text}`);
   }
   return res.json();
 }
 
-function getOAuthToken() {
-  return (
+let cachedAccessToken: { token: string; expiresAt: number } | null = null;
+
+async function getOAuthToken(): Promise<string> {
+  // If we have a cached token that's still valid (with 60s buffer), use it
+  if (cachedAccessToken && Date.now() < cachedAccessToken.expiresAt - 60_000) {
+    return cachedAccessToken.token;
+  }
+
+  // Try static token first
+  const staticToken =
     process.env.YOUTUBE_ACCESS_TOKEN ||
     process.env.YOUTUBE_OAUTH_ACCESS_TOKEN ||
-    process.env.GOOGLE_ACCESS_TOKEN ||
-    ''
-  );
+    process.env.GOOGLE_ACCESS_TOKEN;
+  if (staticToken) return staticToken;
+
+  // Use refresh token to get a fresh access token
+  const refreshToken = process.env.YOUTUBE_REFRESH_TOKEN;
+  const clientId = process.env.YOUTUBE_CLIENT_ID;
+  const clientSecret = process.env.YOUTUBE_CLIENT_SECRET;
+
+  if (!refreshToken || !clientId || !clientSecret) return '';
+
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+      client_id: clientId,
+      client_secret: clientSecret,
+    }).toString(),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Token refresh failed: ${res.status} ${text}`);
+  }
+
+  const data = await res.json();
+  cachedAccessToken = {
+    token: data.access_token,
+    expiresAt: Date.now() + (data.expires_in || 3600) * 1000,
+  };
+  return cachedAccessToken.token;
 }
 
 async function getChannel({ apiKey, accessToken }: { apiKey?: string; accessToken?: string }) {
@@ -138,6 +175,7 @@ async function queryAnalyticsReport(params: {
   // daily granularity is the default; we keep it simple
 
   url.search = search.toString();
+  console.log('[YT Analytics] Fetching:', url.toString().replace(/Bearer\s+\S+/, 'Bearer ***'));
   return (await fetchJson(url.toString(), {
     headers: { Authorization: `Bearer ${params.accessToken}` },
   })) as AnalyticsReport;
@@ -174,12 +212,13 @@ function normalizeTrafficSources(rows: any[][] | undefined) {
   }
 
   const mapKey = (k: string) => {
-    // Values are documented as insightTrafficSourceType enum-like strings.
-    if (k === 'BROWSE') return 'Browse features';
-    if (k === 'SUGGESTED') return 'Suggested videos';
+    if (k === 'SUBSCRIBER') return 'Browse features';
+    if (k === 'RELATED_VIDEO') return 'Suggested videos';
     if (k === 'YT_SEARCH') return 'YouTube search';
     if (k === 'EXT_URL') return 'External';
-    if (k === 'CHANNEL') return 'Channel pages';
+    if (k === 'YT_CHANNEL') return 'Channel pages';
+    if (k === 'NOTIFICATION') return 'Notifications';
+    if (k === 'SHORTS') return 'Shorts';
     return 'Others';
   };
 
@@ -189,6 +228,8 @@ function normalizeTrafficSources(rows: any[][] | undefined) {
     'YouTube search': 0,
     External: 0,
     'Channel pages': 0,
+    Notifications: 0,
+    Shorts: 0,
     Others: 0,
   };
 
@@ -241,13 +282,13 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.YOUTUBE_API_KEY;
-  const accessToken = getOAuthToken();
+  const accessToken = await getOAuthToken();
 
   if (!accessToken) {
     return NextResponse.json(
       {
         error:
-          'Missing OAuth access token. YouTube Analytics API (watch time, revenue, traffic sources, demographics) requires OAuth. Set YOUTUBE_ACCESS_TOKEN (or YOUTUBE_OAUTH_ACCESS_TOKEN).',
+          'Missing OAuth credentials. Set YOUTUBE_REFRESH_TOKEN + YOUTUBE_CLIENT_ID + YOUTUBE_CLIENT_SECRET, or set YOUTUBE_ACCESS_TOKEN directly.',
       },
       { status: 500 }
     );
@@ -274,14 +315,14 @@ export async function POST(req: NextRequest) {
       channelId,
       startDate: period_start,
       endDate: period_end,
-      metrics: 'views,estimatedMinutesWatched,subscribersGained,estimatedRevenue',
+      metrics: 'views,estimatedMinutesWatched,subscribersGained',
     });
 
     const overview = reportToObjectRow(overviewReport);
     const views = safeNumber(overview.views);
     const minutesWatched = safeNumber(overview.estimatedMinutesWatched);
     const subscribersGained = safeNumber(overview.subscribersGained);
-    const estimatedRevenue = safeNumber(overview.estimatedRevenue);
+    const estimatedRevenue = 0; // requires yt-analytics-monetary.readonly scope
 
     // Top videos
     const topVideosReport = await queryAnalyticsReport({
@@ -289,8 +330,7 @@ export async function POST(req: NextRequest) {
       channelId,
       startDate: period_start,
       endDate: period_end,
-      metrics:
-        'views,estimatedMinutesWatched,subscribersGained,estimatedRevenue,impressions,impressionsCtr',
+      metrics: 'views,estimatedMinutesWatched,subscribersGained',
       dimensions: 'video',
       sort: '-views',
       maxResults: 15,
@@ -306,9 +346,9 @@ export async function POST(req: NextRequest) {
       const vViews = safeNumber(r[1]);
       const vMinutes = safeNumber(r[2]);
       const vSubs = safeNumber(r[3]);
-      const vRevenue = safeNumber(r[4]);
-      const vImpressions = safeNumber(r[5]);
-      const vCtr = safeNumber(r[6]);
+      const vRevenue = 0;
+      const vImpressions = 0;
+      const vCtr = 0;
       return {
         videoId,
         title: s?.title || 'Untitled',
