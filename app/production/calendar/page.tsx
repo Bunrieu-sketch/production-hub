@@ -1,11 +1,12 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import type { DatesSetArg, EventInput } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
+import { RefreshCw, Check, AlertCircle, CalendarCheck } from 'lucide-react';
 
 // FullCalendar v6 bundles CSS into JS — no separate CSS imports needed
 
@@ -18,37 +19,157 @@ const LEGEND = [
   { key: 'publish', label: 'Publish', color: '#3fb950' },
   { key: 'sponsor', label: 'Sponsor', color: '#58a6ff' },
   { key: 'milestone', label: 'Milestone', color: '#f85149' },
+  { key: 'travel', label: 'Travel', color: '#f0883e' },
   { key: 'idea', label: 'Idea', color: '#8b949e' },
   { key: 'series', label: 'Series', color: '#30363d' },
+  { key: 'teamup', label: 'TeamUp', color: '#3fb950' },
 ];
+
+type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
 
 export default function CalendarPage() {
   const [events, setEvents] = useState<EventInput[]>([]);
   const [range, setRange] = useState<{ start: string; end: string } | null>(null);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  const [lastSync, setLastSync] = useState<string | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   const plugins = useMemo(() => [dayGridPlugin, timeGridPlugin, listPlugin], []);
 
+  // Fetch both local and TeamUp events
+  const fetchEvents = useCallback(async (start: string, end: string) => {
+    try {
+      // Fetch local events
+      const localPromise = fetch(`/api/calendar?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`).then(r => r.json());
+      
+      // Fetch TeamUp events
+      const teamupPromise = fetch(`/api/teamup/sync?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`).then(r => {
+        if (!r.ok) return [];
+        return r.json();
+      }).catch(() => []);
+
+      const [localEvents, teamupEvents] = await Promise.all([localPromise, teamupPromise]);
+      
+      setEvents([...localEvents, ...teamupEvents]);
+    } catch (err) {
+      console.error('Failed to fetch events:', err);
+    }
+  }, []);
+
   useEffect(() => {
     if (!range) return;
-    const controller = new AbortController();
-    const url = `/api/calendar?start=${encodeURIComponent(range.start)}&end=${encodeURIComponent(range.end)}`;
-    fetch(url, { signal: controller.signal })
-      .then(res => res.json())
-      .then(setEvents)
-      .catch(err => {
-        if (err?.name !== 'AbortError') console.error(err);
-      });
-    return () => controller.abort();
-  }, [range]);
+    fetchEvents(range.start, range.end);
+  }, [range, fetchEvents]);
+
+  // Load last sync time from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('teamup_last_sync');
+    if (saved) setLastSync(saved);
+  }, []);
 
   const handleDatesSet = (info: DatesSetArg) => {
     setRange({ start: info.startStr, end: info.endStr });
   };
 
+  const handleSync = async () => {
+    setSyncStatus('syncing');
+    setSyncError(null);
+
+    try {
+      const response = await fetch('/api/teamup/sync', { method: 'POST' });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Sync failed');
+      }
+
+      setSyncStatus('success');
+      const now = new Date().toLocaleString();
+      setLastSync(now);
+      localStorage.setItem('teamup_last_sync', now);
+
+      // Refresh events
+      if (range) {
+        await fetchEvents(range.start, range.end);
+      }
+
+      // Reset success status after 3 seconds
+      setTimeout(() => setSyncStatus('idle'), 3000);
+    } catch (err) {
+      setSyncStatus('error');
+      setSyncError(err instanceof Error ? err.message : 'Sync failed');
+      setTimeout(() => setSyncStatus('idle'), 5000);
+    }
+  };
+
+  const getSyncButtonContent = () => {
+    switch (syncStatus) {
+      case 'syncing':
+        return (
+          <>
+            <RefreshCw size={16} className="spin" />
+            <span>Syncing...</span>
+          </>
+        );
+      case 'success':
+        return (
+          <>
+            <Check size={16} />
+            <span>Synced!</span>
+          </>
+        );
+      case 'error':
+        return (
+          <>
+            <AlertCircle size={16} />
+            <span>Failed</span>
+          </>
+        );
+      default:
+        return (
+          <>
+            <RefreshCw size={16} />
+            <span>Sync from TeamUp</span>
+          </>
+        );
+    }
+  };
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 600 }}>Calendar</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <CalendarCheck size={24} style={{ color: 'var(--accent)' }} />
+          <h1 style={{ fontSize: 22, fontWeight: 600 }}>Calendar</h1>
+          {lastSync && (
+            <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>
+              Last sync: {lastSync}
+            </span>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {syncError && (
+            <span style={{ fontSize: 12, color: '#f85149' }}>
+              {syncError}
+            </span>
+          )}
+          <button
+            onClick={handleSync}
+            disabled={syncStatus === 'syncing'}
+            className="btn btn-primary"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '8px 16px',
+              fontSize: 13,
+              opacity: syncStatus === 'syncing' ? 0.7 : 1,
+            }}
+          >
+            {getSyncButtonContent()}
+          </button>
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
@@ -60,7 +181,12 @@ export default function CalendarPage() {
         ))}
       </div>
 
-      <div style={{ background: 'transparent' }}>
+      <div style={{ 
+        background: 'var(--card)', 
+        border: '1px solid var(--border)',
+        borderRadius: 8,
+        padding: 16,
+      }}>
         <FullCalendar
           plugins={plugins}
           initialView="dayGridMonth"
@@ -75,10 +201,34 @@ export default function CalendarPage() {
           dayMaxEventRows={4}
           expandRows
           nowIndicator
+          eventClick={(info) => {
+            // Show event details if from TeamUp
+            if (info.event.extendedProps?.source === 'teamup') {
+              const props = info.event.extendedProps;
+              const details = [
+                props.location && `📍 ${props.location}`,
+                props.description && `📝 ${props.description}`,
+                props.calendarName && `📅 ${props.calendarName}`,
+                props.syncedAt && `🔄 Synced: ${props.syncedAt}`,
+              ].filter(Boolean).join('\n\n');
+              
+              if (details) {
+                alert(`${info.event.title}\n\n${details}`);
+              }
+            }
+          }}
         />
       </div>
 
       <style jsx global>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .spin {
+          animation: spin 1s linear infinite;
+        }
+        
         .fc {
           --fc-page-bg-color: transparent;
           --fc-neutral-bg-color: rgba(255, 255, 255, 0.03);

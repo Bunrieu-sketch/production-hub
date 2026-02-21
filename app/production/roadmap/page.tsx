@@ -11,6 +11,7 @@ import Timeline, {
   type TimelineGroupBase,
   type TimelineItemBase,
 } from 'react-calendar-timeline';
+import { RefreshCw, Calendar } from 'lucide-react';
 import 'react-calendar-timeline/dist/style.css';
 import './roadmap.css';
 
@@ -404,6 +405,17 @@ export default function RoadmapPage() {
               {data.year} · {data.tracks.length} tracks · {data.series.length} series
             </div>
           )}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button
+            onClick={() => router.push('/production/calendar')}
+            className="btn btn-secondary"
+            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}
+          >
+            <Calendar size={14} />
+            Calendar
+          </button>
         </div>
 
         <div className="roadmap-controls">
