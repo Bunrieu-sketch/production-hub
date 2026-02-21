@@ -199,6 +199,9 @@ export default function AnalyticsPage() {
           <button className="btn btn-primary" onClick={refresh} disabled={refreshing}>
             {refreshing ? 'Refreshing…' : 'Refresh Data'}
           </button>
+          <button className="btn btn-secondary" onClick={() => window.open('/media-kit/preview', '_blank')}>
+            📄 Media Kit
+          </button>
         </div>
       </div>
 

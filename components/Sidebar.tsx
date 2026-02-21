@@ -128,6 +128,11 @@ export function Sidebar() {
         <span>Analytics</span>
       </Link>
 
+      <Link href="/media-kit/preview" className={`nav-item nested ${isActive('/media-kit') ? 'active' : ''}`}>
+        <FileText size={16} />
+        <span>Media Kit</span>
+      </Link>
+
       <a
         href="http://localhost:5052"
         target="_blank"
