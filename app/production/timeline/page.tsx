@@ -10,7 +10,7 @@ type ViewMode = 'Day' | 'Week' | 'Month';
 
 export default function TimelinePage() {
   const [tasks, setTasks] = useState<FrappeTask[]>([]);
-  const [viewMode, setViewMode] = useState<ViewMode>('Week');
+  const [viewMode, setViewMode] = useState<ViewMode>('Month');
 
   useEffect(() => {
     fetch('/api/gantt')

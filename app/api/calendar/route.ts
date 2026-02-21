@@ -8,6 +8,8 @@ const COLORS = {
   publish: '#3fb950',
   sponsor: '#58a6ff',
   milestone: '#f85149',
+  idea: '#8b949e',
+  series: '#30363d',
 };
 
 type CalendarEvent = {
@@ -135,6 +137,51 @@ export async function GET(req: NextRequest) {
       allDay: true,
       backgroundColor: COLORS.milestone,
       borderColor: COLORS.milestone,
+    });
+  }
+
+  const ideas = db.prepare(`
+    SELECT id, title, shoot_date
+    FROM episodes
+    WHERE stage = 'idea'
+      AND shoot_date IS NOT NULL
+      AND shoot_date BETWEEN ? AND ?
+  `).all(startDate, endDateInclusive) as Array<{ id: number; title: string; shoot_date: string }>;
+
+  for (const idea of ideas) {
+    events.push({
+      id: `idea-${idea.id}`,
+      title: `💡 IDEA: ${idea.title}`,
+      start: idea.shoot_date,
+      allDay: true,
+      backgroundColor: COLORS.idea,
+      borderColor: COLORS.idea,
+    });
+  }
+
+  const series = db.prepare(`
+    SELECT id, title, target_shoot_start, target_shoot_end
+    FROM series
+    WHERE target_shoot_start IS NOT NULL
+      AND target_shoot_end IS NOT NULL
+      AND target_shoot_start <= ?
+      AND target_shoot_end >= ?
+  `).all(endDateInclusive, startDate) as Array<{
+    id: number;
+    title: string;
+    target_shoot_start: string;
+    target_shoot_end: string;
+  }>;
+
+  for (const s of series) {
+    events.push({
+      id: `series-${s.id}`,
+      title: `SERIES: ${s.title}`,
+      start: s.target_shoot_start,
+      end: addDays(s.target_shoot_end, 1),
+      allDay: true,
+      backgroundColor: COLORS.series,
+      borderColor: COLORS.series,
     });
   }
 

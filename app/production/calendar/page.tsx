@@ -18,6 +18,8 @@ const LEGEND = [
   { key: 'publish', label: 'Publish', color: '#3fb950' },
   { key: 'sponsor', label: 'Sponsor', color: '#58a6ff' },
   { key: 'milestone', label: 'Milestone', color: '#f85149' },
+  { key: 'idea', label: 'Idea', color: '#8b949e' },
+  { key: 'series', label: 'Series', color: '#30363d' },
 ];
 
 export default function CalendarPage() {
