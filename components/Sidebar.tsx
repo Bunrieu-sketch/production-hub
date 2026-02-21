@@ -29,10 +29,11 @@ export function Sidebar() {
       label: 'PRODUCTION HUB',
       key: 'production',
       items: [
+        { href: '/production', icon: <LayoutGrid size={16} />, label: 'Dashboard' },
+        { href: '/production/series', icon: <Clapperboard size={16} />, label: 'Productions' },
+        { href: '/production/calendar', icon: <Calendar size={16} />, label: 'Calendar' },
         { href: '/production/timeline', icon: <GanttChart size={16} />, label: 'Timeline' },
         { href: '/production/roadmap', icon: <Route size={16} />, label: 'Roadmap' },
-        { href: '/production/calendar', icon: <Calendar size={16} />, label: 'Calendar' },
-        { href: '/production/series', icon: <Clapperboard size={16} />, label: 'Series' },
         { href: '/production/episodes', icon: <Video size={16} />, label: 'Episodes' },
       ],
     },
