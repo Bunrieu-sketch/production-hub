@@ -33,6 +33,9 @@ export default function CalendarPage() {
 
   const plugins = useMemo(() => [dayGridPlugin, timeGridPlugin, listPlugin], []);
 
+  // Categories that TeamUp can replace when synced
+  const TEAMUP_CATEGORIES = new Set(['PREPROD', 'SHOOT', 'POST', 'PUBLISH']);
+
   const fetchEvents = useCallback(async (start: string, end: string) => {
     try {
       const [localRes, teamupRes] = await Promise.all([
@@ -40,7 +43,19 @@ export default function CalendarPage() {
         fetch(`/api/teamup/sync?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`)
           .then(r => r.ok ? r.json() : []).catch(() => []),
       ]);
-      setEvents([...localRes, ...teamupRes]);
+
+      // If TeamUp has events, filter out local events for the same categories
+      // (TeamUp is source of truth for scheduling)
+      if (teamupRes.length > 0) {
+        const filtered = localRes.filter((e: EventInput) => {
+          const title = String(e.title || '');
+          const prefix = title.split(':')[0]?.trim();
+          return !TEAMUP_CATEGORIES.has(prefix);
+        });
+        setEvents([...filtered, ...teamupRes]);
+      } else {
+        setEvents(localRes);
+      }
     } catch (err) {
       console.error('Failed to fetch events:', err);
     }

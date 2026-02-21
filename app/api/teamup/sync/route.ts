@@ -291,11 +291,25 @@ export async function GET(req: NextRequest) {
     syncedAt: string;
   }>;
 
+  // Map category to the same prefix style used by the local calendar
+  const CATEGORY_PREFIX: Record<string, string> = {
+    preprod: 'PREPROD',
+    shoot: 'SHOOT',
+    post: 'POST',
+    publish: 'PUBLISH',
+    idea: '💡 IDEA',
+    sponsor: 'Sponsor',
+    milestone: 'Milestone',
+    travel: 'Travel',
+  };
+
   const formattedEvents = events.map(e => {
     const colors = CATEGORY_COLORS[e.category] || CATEGORY_COLORS.default;
+    const prefix = CATEGORY_PREFIX[e.category];
+    const title = prefix ? `${prefix}: ${e.title}` : e.title;
     return {
       id: `teamup-${e.id}`,
-      title: e.calendarName ? `[${e.calendarName}] ${e.title}` : e.title,
+      title,
       start: e.start,
       end: e.end ? e.end : undefined,
       allDay: e.allDay === 1,
