@@ -27,7 +27,21 @@ const CATEGORY_MAP: Record<string, string> = {
   'travel': 'travel',
   'flights': 'travel',
   'hotel': 'travel',
+  'ideas': 'idea',
+  'ideas / backlog': 'idea',
+  'backlog': 'idea',
 };
+
+/** Strip emojis and extra symbols, normalize whitespace */
+function normalizeCalendarName(name: string): string {
+  return name
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}]/gu, '')  // strip emojis
+    .replace(/→|->|—|–/g, ' ')  // strip arrows/dashes
+    .replace(/grey|gray/gi, '')  // strip color hints
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
+}
 
 // Map categories to colors
 const CATEGORY_COLORS: Record<string, { bg: string; border: string }> = {
@@ -194,7 +208,7 @@ export async function POST(req: NextRequest) {
         subcalendar_id?: number;
       }) => {
         const calendarName = calendarMap.get(e.subcalendar_id || 0) || '';
-        const normalizedName = calendarName.toLowerCase().trim();
+        const normalizedName = normalizeCalendarName(calendarName);
         const category = CATEGORY_MAP[normalizedName] || 'default';
 
         return {
