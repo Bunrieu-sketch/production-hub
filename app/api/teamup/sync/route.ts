@@ -41,14 +41,29 @@ const CATEGORY_COLORS: Record<string, { bg: string; border: string }> = {
   default: { bg: '#8b949e', border: '#8b949e' },
 };
 
+function getCredentials(req: NextRequest): { apiKey: string | null; calendarId: string | null } {
+  // First try headers (from browser localStorage)
+  const headerKey = req.headers.get('X-TeamUp-Key');
+  const headerId = req.headers.get('X-TeamUp-Calendar');
+  
+  if (headerKey && headerId) {
+    return { apiKey: headerKey, calendarId: headerId };
+  }
+  
+  // Fall back to env vars
+  return { 
+    apiKey: process.env.TEAMUP_API_KEY || null, 
+    calendarId: process.env.TEAMUP_CALENDAR_ID || null 
+  };
+}
+
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.TEAMUP_API_KEY;
-  const calendarId = process.env.TEAMUP_CALENDAR_ID;
+  const { apiKey, calendarId } = getCredentials(req);
 
   if (!apiKey || !calendarId) {
     return NextResponse.json(
-      { error: 'TeamUp API key or calendar ID not configured. Check .env.local' },
-      { status: 500 }
+      { error: 'TeamUp not configured. Click the settings button to add your API key and calendar ID.' },
+      { status: 400 }
     );
   }
 
@@ -218,6 +233,7 @@ export async function POST(req: NextRequest) {
 
 // GET endpoint to retrieve synced events
 export async function GET(req: NextRequest) {
+  const { apiKey, calendarId } = getCredentials(req);
   const db = getDb();
   const { searchParams } = new URL(req.url);
   const startParam = searchParams.get('start');

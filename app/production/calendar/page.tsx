@@ -6,9 +6,7 @@ import type { DatesSetArg, EventInput } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
-import { RefreshCw, Check, AlertCircle, CalendarCheck } from 'lucide-react';
-
-// FullCalendar v6 bundles CSS into JS — no separate CSS imports needed
+import { RefreshCw, Check, AlertCircle, CalendarCheck, Settings } from 'lucide-react';
 
 const FullCalendar = dynamic(() => import('@fullcalendar/react'), { ssr: false });
 
@@ -33,23 +31,44 @@ export default function CalendarPage() {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [apiKey, setApiKey] = useState('');
+  const [calendarId, setCalendarId] = useState('');
+  const [hasCreds, setHasCreds] = useState(false);
 
   const plugins = useMemo(() => [dayGridPlugin, timeGridPlugin, listPlugin], []);
 
-  // Fetch both local and TeamUp events
+  // Load credentials from localStorage on mount
+  useEffect(() => {
+    const savedKey = localStorage.getItem('teamup_api_key') || '';
+    const savedId = localStorage.getItem('teamup_calendar_id') || '';
+    setApiKey(savedKey);
+    setCalendarId(savedId);
+    setHasCreds(!!savedKey && !!savedId);
+  }, []);
+
   const fetchEvents = useCallback(async (start: string, end: string) => {
     try {
       // Fetch local events
       const localPromise = fetch(`/api/calendar?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`).then(r => r.json());
       
-      // Fetch TeamUp events
-      const teamupPromise = fetch(`/api/teamup/sync?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`).then(r => {
-        if (!r.ok) return [];
-        return r.json();
-      }).catch(() => []);
+      // Fetch TeamUp events (if we have credentials, send them as headers)
+      const key = localStorage.getItem('teamup_api_key');
+      const id = localStorage.getItem('teamup_calendar_id');
+      
+      const teamupPromise = (async () => {
+        if (!key || !id) return [];
+        const res = await fetch(`/api/teamup/sync?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`, {
+          headers: {
+            'X-TeamUp-Key': key,
+            'X-TeamUp-Calendar': id,
+          }
+        });
+        if (!res.ok) return [];
+        return res.json();
+      })();
 
       const [localEvents, teamupEvents] = await Promise.all([localPromise, teamupPromise]);
-      
       setEvents([...localEvents, ...teamupEvents]);
     } catch (err) {
       console.error('Failed to fetch events:', err);
@@ -61,7 +80,6 @@ export default function CalendarPage() {
     fetchEvents(range.start, range.end);
   }, [range, fetchEvents]);
 
-  // Load last sync time from localStorage
   useEffect(() => {
     const saved = localStorage.getItem('teamup_last_sync');
     if (saved) setLastSync(saved);
@@ -71,12 +89,35 @@ export default function CalendarPage() {
     setRange({ start: info.startStr, end: info.endStr });
   };
 
+  const handleSaveSettings = () => {
+    localStorage.setItem('teamup_api_key', apiKey);
+    localStorage.setItem('teamup_calendar_id', calendarId);
+    setHasCreds(!!apiKey && !!calendarId);
+    setShowSettings(false);
+    // Refresh events
+    if (range) fetchEvents(range.start, range.end);
+  };
+
   const handleSync = async () => {
+    const key = localStorage.getItem('teamup_api_key');
+    const id = localStorage.getItem('teamup_calendar_id');
+    
+    if (!key || !id) {
+      setShowSettings(true);
+      return;
+    }
+
     setSyncStatus('syncing');
     setSyncError(null);
 
     try {
-      const response = await fetch('/api/teamup/sync', { method: 'POST' });
+      const response = await fetch('/api/teamup/sync', {
+        method: 'POST',
+        headers: {
+          'X-TeamUp-Key': key,
+          'X-TeamUp-Calendar': id,
+        }
+      });
       const data = await response.json();
 
       if (!response.ok) {
@@ -88,12 +129,10 @@ export default function CalendarPage() {
       setLastSync(now);
       localStorage.setItem('teamup_last_sync', now);
 
-      // Refresh events
       if (range) {
         await fetchEvents(range.start, range.end);
       }
 
-      // Reset success status after 3 seconds
       setTimeout(() => setSyncStatus('idle'), 3000);
     } catch (err) {
       setSyncStatus('error');
@@ -105,33 +144,13 @@ export default function CalendarPage() {
   const getSyncButtonContent = () => {
     switch (syncStatus) {
       case 'syncing':
-        return (
-          <>
-            <RefreshCw size={16} className="spin" />
-            <span>Syncing...</span>
-          </>
-        );
+        return <><RefreshCw size={16} className="spin" /><span>Syncing...</span></>;
       case 'success':
-        return (
-          <>
-            <Check size={16} />
-            <span>Synced!</span>
-          </>
-        );
+        return <><Check size={16} /><span>Synced!</span></>;
       case 'error':
-        return (
-          <>
-            <AlertCircle size={16} />
-            <span>Failed</span>
-          </>
-        );
+        return <><AlertCircle size={16} /><span>Failed</span></>;
       default:
-        return (
-          <>
-            <RefreshCw size={16} />
-            <span>Sync from TeamUp</span>
-          </>
-        );
+        return <><RefreshCw size={16} /><span>Sync from TeamUp</span></>;
     }
   };
 
@@ -155,6 +174,14 @@ export default function CalendarPage() {
             </span>
           )}
           <button
+            onClick={() => setShowSettings(true)}
+            className="btn btn-secondary"
+            title="TeamUp Settings"
+            style={{ display: 'flex', alignItems: 'center', padding: '8px 12px' }}
+          >
+            <Settings size={16} />
+          </button>
+          <button
             onClick={handleSync}
             disabled={syncStatus === 'syncing'}
             className="btn btn-primary"
@@ -171,6 +198,94 @@ export default function CalendarPage() {
           </button>
         </div>
       </div>
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+        }} onClick={() => setShowSettings(false)}>
+          <div style={{
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            borderRadius: 8,
+            padding: 24,
+            width: 400,
+            maxWidth: '90vw',
+          }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 8px 0', fontSize: 18 }}>TeamUp Settings</h3>
+            <p style={{ margin: '0 0 16px 0', fontSize: 12, color: 'var(--text-dim)' }}>
+              Get these from teamup.com → Settings → API
+            </p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, marginBottom: 4, color: 'var(--text-dim)' }}>
+                  API Key
+                </label>
+                <input
+                  type="password"
+                  value={apiKey}
+                  onChange={e => setApiKey(e.target.value)}
+                  placeholder="Paste your TeamUp API key"
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 4,
+                    color: 'var(--text)',
+                    fontSize: 13,
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, marginBottom: 4, color: 'var(--text-dim)' }}>
+                  Calendar ID
+                </label>
+                <input
+                  type="text"
+                  value={calendarId}
+                  onChange={e => setCalendarId(e.target.value)}
+                  placeholder="e.g., ks1b3p7q1d3b2b2b"
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 4,
+                    color: 'var(--text)',
+                    fontSize: 13,
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 8, marginTop: 20, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowSettings(false)}
+                className="btn btn-secondary"
+                style={{ padding: '8px 16px', fontSize: 13 }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveSettings}
+                className="btn btn-primary"
+                style={{ padding: '8px 16px', fontSize: 13 }}
+                disabled={!apiKey || !calendarId}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
         {LEGEND.map(item => (
@@ -202,7 +317,6 @@ export default function CalendarPage() {
           expandRows
           nowIndicator
           eventClick={(info) => {
-            // Show event details if from TeamUp
             if (info.event.extendedProps?.source === 'teamup') {
               const props = info.event.extendedProps;
               const details = [
@@ -211,10 +325,7 @@ export default function CalendarPage() {
                 props.calendarName && `📅 ${props.calendarName}`,
                 props.syncedAt && `🔄 Synced: ${props.syncedAt}`,
               ].filter(Boolean).join('\n\n');
-              
-              if (details) {
-                alert(`${info.event.title}\n\n${details}`);
-              }
+              if (details) alert(`${info.event.title}\n\n${details}`);
             }
           }}
         />
@@ -242,8 +353,8 @@ export default function CalendarPage() {
 
         .fc .fc-toolbar-title {
           color: var(--text);
-          font-size: 18px;
-          font-weight: 600;
+          fontSize: 18px;
+          fontWeight: 600;
         }
 
         .fc .fc-button {
