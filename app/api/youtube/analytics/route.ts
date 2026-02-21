@@ -265,9 +265,14 @@ function normalizeDemographics(rows: any[][] | undefined) {
   return result;
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const db = getDb();
-  const row = db.prepare('SELECT * FROM youtube_analytics ORDER BY fetched_at DESC LIMIT 1').get() as AnalyticsRow | undefined;
+  const url = new URL(req.url);
+  const periodParam = url.searchParams.get('period') || '7d';
+  const daysMap: Record<string, number> = { '7d': 7, '30d': 30, '90d': 90 };
+  const days = daysMap[periodParam] || 7;
+  
+  const row = db.prepare('SELECT * FROM youtube_analytics WHERE period_days = ? ORDER BY fetched_at DESC LIMIT 1').get(days) as AnalyticsRow | undefined;
   if (!row) return NextResponse.json({ data: null });
 
   return NextResponse.json({
@@ -276,6 +281,7 @@ export async function GET() {
       top_videos: JSON.parse(row.top_videos || '[]'),
       traffic_sources: JSON.parse(row.traffic_sources || '{}'),
       demographics: JSON.parse(row.demographics || '{}'),
+      geography: JSON.parse((row as any).geography || '[]'),
     },
   });
 }
@@ -294,12 +300,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // last 7 full days, excluding today
+  // Parse period from query string (default: 7d)
+  const url = new URL(req.url);
+  const periodParam = url.searchParams.get('period') || '7d';
+  const daysMap: Record<string, number> = { '7d': 7, '30d': 30, '90d': 90 };
+  const days = daysMap[periodParam] || 7;
+
   const now = new Date();
   const end = new Date(now);
   end.setDate(end.getDate() - 1);
   const start = new Date(end);
-  start.setDate(start.getDate() - 6);
+  start.setDate(start.getDate() - (days - 1));
 
   const period_start = toDateString(start);
   const period_end = toDateString(end);
@@ -388,6 +399,23 @@ export async function POST(req: NextRequest) {
     });
     const demographics = normalizeDemographics(demographicsReport.rows);
 
+    // Geography
+    const geographyReport = await queryAnalyticsReport({
+      accessToken,
+      channelId,
+      startDate: period_start,
+      endDate: period_end,
+      metrics: 'views,estimatedMinutesWatched',
+      dimensions: 'country',
+      sort: '-views',
+      maxResults: 20,
+    });
+    const geography = (geographyReport.rows || []).map((r: any[]) => ({
+      country: String(r[0] || ''),
+      views: safeNumber(r[1]),
+      watchTimeMinutes: safeNumber(r[2]),
+    }));
+
     // Realtime-ish: subscribers from channel stats + views last 48 hours (last 2 full days)
     const realtime_subscribers = safeNumber(channel.statistics?.subscriberCount);
     const last2End = new Date(now);
@@ -414,6 +442,7 @@ export async function POST(req: NextRequest) {
         fetched_at,
         period_start,
         period_end,
+        period_days,
         channel_id,
         channel_title,
         subscribers,
@@ -423,13 +452,15 @@ export async function POST(req: NextRequest) {
         top_videos,
         traffic_sources,
         demographics,
+        geography,
         realtime_subscribers,
         realtime_views_48h
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       fetched_at,
       period_start,
       period_end,
+      days,
       channelId,
       channelTitle,
       Math.round(subscribersGained),
@@ -439,6 +470,7 @@ export async function POST(req: NextRequest) {
       JSON.stringify(top_videos),
       JSON.stringify(traffic_sources),
       JSON.stringify(demographics),
+      JSON.stringify(geography),
       Math.round(realtime_subscribers),
       Math.round(realtime_views_48h)
     );
@@ -452,6 +484,7 @@ export async function POST(req: NextRequest) {
         top_videos: JSON.parse(row.top_videos || '[]'),
         traffic_sources: JSON.parse(row.traffic_sources || '{}'),
         demographics: JSON.parse(row.demographics || '{}'),
+        geography: JSON.parse((row as any).geography || '[]'),
       },
     });
   } catch (err: any) {
