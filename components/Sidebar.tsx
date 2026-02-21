@@ -7,7 +7,7 @@ import {
   LayoutGrid, Kanban, FileText, Search, Palette,
   GanttChart, Calendar, Clapperboard, Video, Route,
   HandCoins, Users, ChevronDown, ChevronRight,
-  ExternalLink, ShieldCheck, Gavel, FolderOpen,
+  ExternalLink, ShieldCheck, Gavel, FolderOpen, BarChart3,
 } from 'lucide-react';
 
 interface NavSection {
@@ -122,6 +122,11 @@ export function Sidebar() {
 
       {/* Bottom links */}
       <div className="nav-divider" />
+
+      <Link href="/analytics" className={`nav-item ${isActive('/analytics') ? 'active' : ''}`}>
+        <BarChart3 size={18} />
+        <span>Analytics</span>
+      </Link>
 
       <a
         href="http://localhost:5052"

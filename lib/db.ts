@@ -236,6 +236,34 @@ function initDb() {
       created_at TEXT DEFAULT (datetime('now')),
       UNIQUE(episode_id, phase)
     );
+
+    -- ── YouTube Analytics cache ───────────────────────────────────────────
+    CREATE TABLE IF NOT EXISTS youtube_analytics (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      fetched_at TEXT DEFAULT (datetime('now')),
+
+      period_start TEXT NOT NULL,
+      period_end TEXT NOT NULL,
+
+      channel_id TEXT NOT NULL,
+      channel_title TEXT DEFAULT '',
+
+      subscribers INTEGER DEFAULT 0,
+      views INTEGER DEFAULT 0,
+      watch_time_hours REAL DEFAULT 0,
+      estimated_revenue REAL DEFAULT 0,
+
+      -- JSON blobs stored as TEXT
+      top_videos TEXT DEFAULT '[]',
+      traffic_sources TEXT DEFAULT '{}',
+      demographics TEXT DEFAULT '{}',
+
+      realtime_subscribers INTEGER DEFAULT 0,
+      realtime_views_48h INTEGER DEFAULT 0
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_youtube_analytics_fetched_at ON youtube_analytics(fetched_at);
+    CREATE INDEX IF NOT EXISTS idx_youtube_analytics_channel_id ON youtube_analytics(channel_id);
   `);
 
   migrateEpisodesSchema();
