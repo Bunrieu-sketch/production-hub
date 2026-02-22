@@ -140,7 +140,7 @@ export default async function SeriesPage() {
                 </div>
 
                 {/* Phase Milestone Bar — week ruler with phase dots */}
-                <div style={{ marginTop: "14px", padding: "0 4px" }}>
+                <div style={{ marginTop: "14px" }}>
                   {(() => {
                     // Get milestone dates
                     const phaseDates = PHASES.map(p => {
@@ -148,13 +148,22 @@ export default async function SeriesPage() {
                       return ms?.due_date ? new Date(ms.due_date).getTime() : null;
                     });
 
-                    // Find first and last valid dates
+                    // Find valid dates
                     const validDates = phaseDates.filter(d => d !== null) as number[];
+
+                    // No dates — show simple equal-spaced dots (no ruler)
                     if (validDates.length < 2) {
-                      // Fallback: equal spacing if not enough dates
                       return (
-                        <div style={{ display: "flex", alignItems: "flex-start", position: "relative" }}>
+                        <div style={{ display: "flex", alignItems: "flex-start", position: "relative", padding: "0 4px" }}>
                           <div style={{ position: "absolute", top: "7px", left: "7px", right: "7px", height: "2px", background: "var(--border)", zIndex: 0 }} />
+                          {/* Colored progress line up to active phase */}
+                          {activePhaseIdx >= 0 && (
+                            <div style={{
+                              position: "absolute", top: "7px", left: "7px",
+                              width: `${(activePhaseIdx / (PHASES.length - 1)) * 100}%`,
+                              height: "2px", background: PHASES[Math.min(activePhaseIdx, PHASES.length - 1)].color, zIndex: 1,
+                            }} />
+                          )}
                           {PHASES.map((phase, i) => {
                             const ms = milestones[phase.milestone];
                             const isCompleted = i < activePhaseIdx || (i === activePhaseIdx && (s.status === 'published' || s.status === 'archived')) || (ms?.completed === 1);
@@ -163,7 +172,13 @@ export default async function SeriesPage() {
                             const dotColor = isFuture ? '#484f58' : phase.color;
                             return (
                               <div key={phase.key} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 2 }}>
-                                <div style={{ width: "14px", height: "14px", borderRadius: "50%", background: isCompleted || isActive ? dotColor : 'transparent', border: `2px solid ${dotColor}`, animation: isActive ? "phase-pulse 2s ease-in-out infinite" : "none", boxShadow: isActive ? `0 0 0 3px ${dotColor}44` : "none" }} />
+                                <div style={{
+                                  width: "14px", height: "14px", borderRadius: "50%",
+                                  background: isCompleted || isActive ? dotColor : 'transparent',
+                                  border: `2px solid ${dotColor}`,
+                                  animation: isActive ? "phase-pulse 2s ease-in-out infinite" : "none",
+                                  boxShadow: isActive ? `0 0 0 3px ${dotColor}44` : "none",
+                                }} />
                                 <span style={{ fontSize: "10px", marginTop: "4px", color: isFuture ? "#484f58" : dotColor, fontWeight: isActive ? 600 : 400, whiteSpace: "nowrap" }}>{phase.label}</span>
                               </div>
                             );
@@ -178,7 +193,7 @@ export default async function SeriesPage() {
                     const oneWeek = 7 * 24 * 60 * 60 * 1000;
                     const totalWeeks = Math.ceil(totalMs / oneWeek);
 
-                    // Position as percentage of total timeline
+                    // Position as percentage (0-100)
                     const getPos = (ts: number) => ((ts - startDate) / totalMs) * 100;
 
                     // Generate week ticks
@@ -190,91 +205,81 @@ export default async function SeriesPage() {
                       }
                     }
 
-                    // Phase colors for segments
-                    const getSegmentColor = (phaseIdx: number) => {
-                      if (phaseIdx < 0) return 'var(--border)';
-                      if (phaseIdx <= activePhaseIdx) return PHASES[Math.min(phaseIdx, PHASES.length - 1)].color;
-                      return 'var(--border)';
-                    };
-
-                    // Determine which phase a position falls in
-                    const getPhaseAt = (pos: number): number => {
-                      for (let i = PHASES.length - 1; i >= 0; i--) {
-                        if (phaseDates[i] && pos >= getPos(phaseDates[i]!)) return i;
-                      }
-                      return -1;
-                    };
-
                     return (
-                      <div style={{ position: "relative", height: "52px", marginBottom: "4px" }}>
-                        {/* Base line */}
-                        <div style={{ position: "absolute", top: "14px", left: 0, right: 0, height: "2px", background: "var(--border)", zIndex: 0 }} />
+                      <div style={{ margin: "0 30px" }}>
+                        <div style={{ position: "relative", height: "56px", marginBottom: "4px" }}>
+                          {/* Base line */}
+                          <div style={{ position: "absolute", top: "14px", left: 0, right: 0, height: "2px", background: "var(--border)", zIndex: 0 }} />
 
-                        {/* Colored segments between phases */}
-                        {PHASES.slice(0, -1).map((phase, i) => {
-                          if (!phaseDates[i] || !phaseDates[i + 1]) return null;
-                          const left = getPos(phaseDates[i]!);
-                          const width = getPos(phaseDates[i + 1]!) - left;
-                          const isDone = i < activePhaseIdx;
-                          const isCurrent = i === activePhaseIdx;
-                          if (!isDone && !isCurrent) return null;
-                          return (
-                            <div key={`seg-${i}`} style={{
-                              position: "absolute", top: "13px", left: `${left}%`, width: `${width}%`,
-                              height: "4px", background: isCurrent ? `${phase.color}88` : phase.color,
-                              borderRadius: "2px", zIndex: 1,
-                            }} />
-                          );
-                        })}
-
-                        {/* Week tick marks */}
-                        {weekTicks.map((tick) => (
-                          <div key={`tick-${tick.week}`} style={{
-                            position: "absolute", top: "10px", left: `${tick.pos}%`,
-                            width: "1px", height: "10px", background: "#30363d", zIndex: 1,
-                            transform: "translateX(-0.5px)",
-                          }}>
-                            {/* Week number below */}
-                            <span style={{
-                              position: "absolute", top: "30px", left: "50%", transform: "translateX(-50%)",
-                              fontSize: "8px", color: "#484f58", whiteSpace: "nowrap",
-                            }}>
-                              {tick.week}
-                            </span>
-                          </div>
-                        ))}
-
-                        {/* Phase dots */}
-                        {PHASES.map((phase, i) => {
-                          const ms = milestones[phase.milestone];
-                          if (!phaseDates[i]) return null;
-                          const pos = getPos(phaseDates[i]!);
-                          const isCompleted = i < activePhaseIdx || (i === activePhaseIdx && (s.status === 'published' || s.status === 'archived')) || (ms?.completed === 1);
-                          const isActive = i === activePhaseIdx && !isCompleted;
-                          const isFuture = !isCompleted && !isActive;
-                          const dotColor = isFuture ? '#484f58' : phase.color;
-
-                          return (
-                            <div key={phase.key} style={{
-                              position: "absolute", left: `${pos}%`, top: "4px", transform: "translateX(-50%)", zIndex: 3,
-                              display: "flex", flexDirection: "column", alignItems: "center",
-                            }}>
-                              <div style={{
-                                width: "14px", height: "14px", borderRadius: "50%",
-                                background: isCompleted || isActive ? dotColor : 'var(--bg-card, #161b22)',
-                                border: `2.5px solid ${dotColor}`,
-                                animation: isActive ? "phase-pulse 2s ease-in-out infinite" : "none",
-                                boxShadow: isActive ? `0 0 0 3px ${dotColor}44` : "none",
+                          {/* Colored segments between phases */}
+                          {PHASES.slice(0, -1).map((phase, i) => {
+                            if (!phaseDates[i] || !phaseDates[i + 1]) return null;
+                            const left = getPos(phaseDates[i]!);
+                            const width = getPos(phaseDates[i + 1]!) - left;
+                            const isDone = i < activePhaseIdx;
+                            const isCurrent = i === activePhaseIdx;
+                            if (!isDone && !isCurrent) return null;
+                            return (
+                              <div key={`seg-${i}`} style={{
+                                position: "absolute", top: "13px",
+                                left: `${left}%`, width: `${width}%`,
+                                height: "4px", background: isCurrent ? `${phase.color}88` : phase.color,
+                                borderRadius: "2px", zIndex: 1,
                               }} />
+                            );
+                          })}
+
+                          {/* Week tick marks */}
+                          {weekTicks.map((tick) => (
+                            <div key={`tick-${tick.week}`} style={{
+                              position: "absolute", top: "10px",
+                              left: `${tick.pos}%`,
+                              width: "1px", height: "10px", background: "#30363d", zIndex: 1,
+                              transform: "translateX(-0.5px)",
+                            }}>
                               <span style={{
-                                fontSize: "10px", marginTop: "2px", color: isFuture ? "#484f58" : dotColor,
-                                fontWeight: isActive ? 600 : 400, whiteSpace: "nowrap",
+                                position: "absolute", top: "32px", left: "50%", transform: "translateX(-50%)",
+                                fontSize: "8px", color: "#484f58", whiteSpace: "nowrap",
                               }}>
-                                {phase.label}
+                                {tick.week}
                               </span>
                             </div>
-                          );
-                        })}
+                          ))}
+
+                          {/* Phase dots */}
+                          {PHASES.map((phase, i) => {
+                            const ms = milestones[phase.milestone];
+                            if (!phaseDates[i]) return null;
+                            const pos = getPos(phaseDates[i]!);
+                            const isCompleted = i < activePhaseIdx || (i === activePhaseIdx && (s.status === 'published' || s.status === 'archived')) || (ms?.completed === 1);
+                            const isActive = i === activePhaseIdx && !isCompleted;
+                            const isFuture = !isCompleted && !isActive;
+                            const dotColor = isFuture ? '#484f58' : phase.color;
+
+                            return (
+                              <div key={phase.key} style={{
+                                position: "absolute",
+                                left: `${pos}%`,
+                                top: "4px", transform: "translateX(-50%)", zIndex: 3,
+                                display: "flex", flexDirection: "column", alignItems: "center",
+                              }}>
+                                <div style={{
+                                  width: "14px", height: "14px", borderRadius: "50%",
+                                  background: isCompleted || isActive ? dotColor : 'var(--bg-card, #161b22)',
+                                  border: `2.5px solid ${dotColor}`,
+                                  animation: isActive ? "phase-pulse 2s ease-in-out infinite" : "none",
+                                  boxShadow: isActive ? `0 0 0 3px ${dotColor}44` : "none",
+                                }} />
+                                <span style={{
+                                  fontSize: "10px", marginTop: "2px", color: isFuture ? "#484f58" : dotColor,
+                                  fontWeight: isActive ? 600 : 400, whiteSpace: "nowrap",
+                                }}>
+                                  {phase.label}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     );
                   })()}
