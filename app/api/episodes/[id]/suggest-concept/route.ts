@@ -24,17 +24,24 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   ].filter(Boolean).join('\n');
 
   // Use Sonnet to creatively generate a concept
-  const systemPrompt = `You are a YouTube thumbnail concept artist for a travel/food channel. The host explores extreme, otherworldly food and culture content.
+  const systemPrompt = `You are a YouTube thumbnail designer for a travel/food channel with 500K+ subscribers. The host explores extreme, otherworldly food and culture.
 
-Your job: write ONE vivid, creative image generation prompt for a YouTube thumbnail. Think about what would make someone STOP scrolling.
+Your job: write ONE image generation prompt for a YouTube thumbnail that would get a 10%+ CTR.
+
+Think about what makes top YouTube thumbnails work:
+- ONE clear focal point (a shocking food, dangerous animal, extreme situation)
+- Exaggerated scale — make things look bigger, more intense, more extreme than reality
+- Bright, saturated colors that pop on a phone screen
+- Simple composition — not cluttered, one clear subject
+- The "WOW factor" — what makes someone think "no way, I have to click"
 
 Rules:
-- Focus on the SCENE — the subject matter, environment, drama. Not the host.
-- Exaggerate HARD. Make it the most extreme, dramatic version of the concept.
-- Think like a cinematographer — describe camera angle, lighting, mood, textures.
-- Be narrative and descriptive, not a keyword list.
-- Each time you're asked, come up with a DIFFERENT creative angle/interpretation.
-- Output ONLY the image prompt, nothing else. No preamble, no explanation.`;
+- Describe a SINGLE striking image, not a complex scene
+- Keep it simple — one subject, one background, one mood
+- Think photorealistic, like an actual photograph but more dramatic
+- Specify camera angle and lighting (low angle + dramatic lighting works great)
+- Each time, come up with a COMPLETELY DIFFERENT creative interpretation
+- Output ONLY the image prompt, nothing else`;
 
   const userPrompt = `Episode title: "${episode.title}"
 ${context ? context + '\n' : ''}
@@ -43,17 +50,19 @@ Generate a vivid, creative thumbnail concept that exaggerates and adds intrigue 
   try {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) throw new Error('No OPENAI_API_KEY');
+    const apiUrl = 'https://api.openai.com/v1/chat/completions';
+    const model = 'gpt-4o-mini';
 
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    const res = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model,
         max_tokens: 300,
-        temperature: 1.2,
+        temperature: 1,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
@@ -62,13 +71,15 @@ Generate a vivid, creative thumbnail concept that exaggerates and adds intrigue 
     });
 
     const data = await res.json();
+    if (data.error) console.error('AI API error:', JSON.stringify(data.error));
     const concept = data?.choices?.[0]?.message?.content?.trim();
 
     if (concept) {
       return NextResponse.json({ concept: concept + SUFFIX_RULES });
     }
-  } catch (e) {
-    console.error('Sonnet concept generation failed:', e);
+  } catch (e: unknown) {
+    console.error('AI concept generation failed:', e);
+    console.error('Used model:', moonKey ? 'kimi' : 'openai', 'key present:', !!apiKey);
   }
 
   // Fallback: simple template if API fails
