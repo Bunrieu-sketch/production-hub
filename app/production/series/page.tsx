@@ -207,7 +207,7 @@ export default async function SeriesPage() {
 
                     return (
                       <div style={{ margin: "0 30px" }}>
-                        <div style={{ position: "relative", height: "56px", marginBottom: "4px" }}>
+                        <div style={{ position: "relative", height: "60px", marginBottom: "4px" }}>
                           {/* Base line */}
                           <div style={{ position: "absolute", top: "14px", left: 0, right: 0, height: "2px", background: "var(--border)", zIndex: 0 }} />
 
@@ -260,7 +260,7 @@ export default async function SeriesPage() {
                               <div key={phase.key} style={{
                                 position: "absolute",
                                 left: `${pos}%`,
-                                top: "4px", transform: "translateX(-50%)", zIndex: 3,
+                                top: "8px", transform: "translateX(-50%)", zIndex: 3,
                                 display: "flex", flexDirection: "column", alignItems: "center",
                               }}>
                                 <div style={{
