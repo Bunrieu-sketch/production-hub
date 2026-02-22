@@ -1,5 +1,6 @@
 import { getDb } from '@/lib/db';
 import Link from 'next/link';
+import AddProductionButton from './AddProductionButton';
 
 export const dynamic = "force-dynamic";
 
@@ -96,9 +97,12 @@ export default async function SeriesPage() {
           50% { box-shadow: 0 0 0 6px rgba(255,255,255,0); }
         }
       `}</style>
-      <div>
-        <div className="page-title">Productions</div>
-        <div className="muted">Manage every production and its milestones</div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div>
+          <div className="page-title">Productions</div>
+          <div className="muted">Manage every production and its milestones</div>
+        </div>
+        <AddProductionButton />
       </div>
 
       <div className="list" style={{ gap: "12px" }}>
