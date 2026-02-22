@@ -69,11 +69,11 @@ function EditableDate({ value, onSave }: { value: string | null; onSave: (v: str
         type="date"
         autoFocus
         value={draft}
-        onChange={e => setDraft(e.target.value)}
+        onChange={e => { setDraft(e.target.value); }}
         onBlur={() => { setEditing(false); if (draft !== (value || "")) onSave(draft); }}
         onKeyDown={e => { if (e.key === "Escape") { setEditing(false); setDraft(value || ""); } }}
         className="input"
-        style={{ fontSize: "12px", padding: "2px 6px" }}
+        style={{ fontSize: "12px", padding: "2px 6px", width: "140px", flexShrink: 0 }}
       />
     );
   }
@@ -85,6 +85,63 @@ function EditableDate({ value, onSave }: { value: string | null; onSave: (v: str
     >
       {value ? formatDate(value) : <span className="muted">Set date</span>}
     </span>
+  );
+}
+
+// Inline add row
+function AddInline({ placeholder, onAdd }: { placeholder: string; onAdd: (value: string) => Promise<void> }) {
+  const [active, setActive] = useState(false);
+  const [value, setValue] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function submit() {
+    if (!value.trim()) return;
+    setSaving(true);
+    await onAdd(value.trim());
+    setValue("");
+    setActive(false);
+    setSaving(false);
+  }
+
+  if (!active) {
+    return (
+      <button
+        onClick={() => setActive(true)}
+        style={{
+          background: "none", border: "1px dashed var(--border)", borderRadius: "6px",
+          color: "var(--text-dim)", fontSize: "12px", padding: "6px 10px", cursor: "pointer",
+          width: "100%", textAlign: "left", marginTop: "8px",
+        }}
+      >
+        + {placeholder}
+      </button>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", gap: "6px", marginTop: "8px" }}>
+      <input
+        autoFocus
+        value={value}
+        onChange={e => setValue(e.target.value)}
+        onKeyDown={e => { if (e.key === "Enter") submit(); if (e.key === "Escape") { setActive(false); setValue(""); } }}
+        placeholder={placeholder}
+        className="input"
+        style={{ flex: 1, fontSize: "12px", padding: "4px 8px" }}
+      />
+      <button onClick={submit} disabled={saving} style={{
+        background: "var(--accent)", color: "#fff", border: "none", borderRadius: "6px",
+        padding: "4px 10px", fontSize: "12px", cursor: "pointer", flexShrink: 0,
+      }}>
+        {saving ? "..." : "Add"}
+      </button>
+      <button onClick={() => { setActive(false); setValue(""); }} style={{
+        background: "none", border: "1px solid var(--border)", borderRadius: "6px",
+        color: "var(--text-dim)", padding: "4px 8px", fontSize: "12px", cursor: "pointer",
+      }}>
+        ✕
+      </button>
+    </div>
   );
 }
 
@@ -282,6 +339,32 @@ export default function SeriesSlideOver({ seriesId, onClose, onUpdated }: Props)
                     </div>
                   ))}
                 </div>
+                <AddInline
+                  placeholder="Add episode..."
+                  onAdd={async (title) => {
+                    await fetch(`/api/production/series/${seriesId}/episodes`, {
+                      method: "POST", headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ title, series_id: seriesId }),
+                    });
+                    loadData();
+                  }}
+                />
+              </div>
+            )}
+            {/* Add episodes section if none exist */}
+            {(!data.episodes || data.episodes.length === 0) && (
+              <div style={{ background: "var(--bg)", borderRadius: "10px", border: "1px solid var(--border)", padding: "16px", marginBottom: "16px" }}>
+                <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-dim)", marginBottom: "12px" }}>Episodes</div>
+                <AddInline
+                  placeholder="Add first episode..."
+                  onAdd={async (title) => {
+                    await fetch(`/api/production/series/${seriesId}/episodes`, {
+                      method: "POST", headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ title, series_id: seriesId }),
+                    });
+                    loadData();
+                  }}
+                />
               </div>
             )}
 
@@ -309,12 +392,15 @@ export default function SeriesSlideOver({ seriesId, onClose, onUpdated }: Props)
                     placeholder="Set producer"
                   />
                 </div>
-                {data.budget_target > 0 && (
-                  <div>
-                    <span className="muted" style={{ display: "block", marginBottom: "4px" }}>Budget</span>
-                    <span style={{ color: "var(--text)" }}>${Number(data.budget_target).toLocaleString()}</span>
-                  </div>
-                )}
+                <div>
+                  <span className="muted" style={{ display: "block", marginBottom: "4px" }}>Budget</span>
+                  <EditableText
+                    value={data.budget_target ? `$${Number(data.budget_target).toLocaleString()}` : ""}
+                    onSave={v => saveSeries({ budget_target: parseInt(v.replace(/[^0-9]/g, "")) || 0 })}
+                    placeholder="Set budget"
+                    style={{ fontSize: "13px" }}
+                  />
+                </div>
               </div>
               <div style={{ marginTop: "14px" }}>
                 <span className="muted" style={{ display: "block", marginBottom: "4px" }}>Notes</span>
@@ -327,13 +413,7 @@ export default function SeriesSlideOver({ seriesId, onClose, onUpdated }: Props)
               </div>
             </div>
 
-            <a href={`/production/series/${data.id}`} style={{
-              display: "block", textAlign: "center", padding: "10px", color: "var(--accent)",
-              fontSize: "13px", textDecoration: "none", border: "1px solid var(--border)",
-              borderRadius: "8px", background: "var(--bg)",
-            }}>
-              Open Full Editor →
-            </a>
+            {/* All editing is now inline — no need for full editor */}
           </>
         )}
       </div>
