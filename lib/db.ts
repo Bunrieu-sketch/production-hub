@@ -101,6 +101,7 @@ function initDb() {
       scraped_at TEXT,
       view_count_updated_at TEXT,
       thumbnail_url TEXT DEFAULT '',
+      script_url TEXT DEFAULT '',
       thumbnail_concept TEXT DEFAULT '',
       hook TEXT DEFAULT '',
       outline TEXT DEFAULT '',
@@ -293,6 +294,7 @@ function migrateEpisodesSchema() {
   addColumn('scraped_at', 'TEXT');
   addColumn('view_count_updated_at', 'TEXT');
   addColumn('thumbnail_url', "TEXT DEFAULT ''");
+  addColumn('script_url', "TEXT DEFAULT ''");
 }
 
 function migrateSeriesSchema() {
