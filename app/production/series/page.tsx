@@ -135,85 +135,128 @@ export default async function SeriesPage() {
                   </div>
                 </div>
 
-                {/* Phase Milestone Bar */}
+                {/* Phase Milestone Bar — proportional spacing based on dates */}
                 <div style={{ marginTop: "14px", padding: "0 4px" }}>
-                  <div style={{ display: "flex", alignItems: "flex-start", position: "relative" }}>
-                    {/* Connecting line */}
-                    <div style={{
-                      position: "absolute",
-                      top: "7px",
-                      left: "7px",
-                      right: "7px",
-                      height: "2px",
-                      background: "var(--border)",
-                      zIndex: 0,
-                    }} />
-                    {/* Completed portion of line */}
-                    {activePhaseIdx >= 0 && (
-                      <div style={{
-                        position: "absolute",
-                        top: "7px",
-                        left: "7px",
-                        width: `${(Math.min(activePhaseIdx, PHASES.length - 1) / (PHASES.length - 1)) * 100}%`,
-                        height: "2px",
-                        background: PHASES[Math.min(activePhaseIdx, PHASES.length - 1)].color,
-                        zIndex: 1,
-                        transition: "width 0.3s",
-                      }} />
-                    )}
+                  {(() => {
+                    // Calculate proportional flex values from milestone dates
+                    const dates = PHASES.map(p => {
+                      const ms = milestones[p.milestone];
+                      return ms?.due_date ? new Date(ms.due_date).getTime() : null;
+                    });
+                    // Segment durations between consecutive phases
+                    const segFlex: number[] = [];
+                    for (let i = 0; i < PHASES.length - 1; i++) {
+                      if (dates[i] && dates[i + 1]) {
+                        segFlex.push(Math.max(dates[i + 1]! - dates[i]!, 1));
+                      } else {
+                        segFlex.push(1); // equal fallback if no dates
+                      }
+                    }
+                    // Weeks label for each segment
+                    const segWeeks = segFlex.map((d, i) =>
+                      dates[i] && dates[i + 1] ? Math.round(d / (7 * 86400000)) : null
+                    );
 
-                    {PHASES.map((phase, i) => {
-                      const ms = milestones[phase.milestone];
-                      const isCompleted = i < activePhaseIdx || (i === activePhaseIdx && s.status === 'published') || (i === activePhaseIdx && s.status === 'archived') || (ms?.completed === 1);
-                      const isActive = i === activePhaseIdx && !isCompleted;
-                      const isFuture = !isCompleted && !isActive;
-                      const dotColor = isFuture ? '#484f58' : phase.color;
+                    return (
+                      <div style={{ display: "flex", alignItems: "flex-start", position: "relative" }}>
+                        {/* Connecting line */}
+                        <div style={{
+                          position: "absolute",
+                          top: "7px",
+                          left: "7px",
+                          right: "7px",
+                          height: "2px",
+                          background: "var(--border)",
+                          zIndex: 0,
+                        }} />
 
-                      return (
-                        <div key={phase.key} style={{
-                          flex: 1,
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          position: "relative",
-                          zIndex: 2,
-                        }}>
-                          {/* Dot */}
-                          <div style={{
-                            width: isActive ? "14px" : "14px",
-                            height: isActive ? "14px" : "14px",
-                            borderRadius: "50%",
-                            background: isCompleted || isActive ? dotColor : 'transparent',
-                            border: `2px solid ${dotColor}`,
-                            animation: isActive ? "phase-pulse 2s ease-in-out infinite" : "none",
-                            boxShadow: isActive ? `0 0 0 3px ${dotColor}44` : "none",
-                            transition: "all 0.3s",
-                          }} />
-                          {/* Label */}
-                          <span style={{
-                            fontSize: "10px",
-                            marginTop: "4px",
-                            color: isFuture ? "#484f58" : dotColor,
-                            fontWeight: isActive ? 600 : 400,
-                            whiteSpace: "nowrap",
-                          }}>
-                            {phase.label}
-                          </span>
-                          {/* Due date */}
-                          {ms?.due_date && (
-                            <span style={{
-                              fontSize: "9px",
-                              color: isFuture ? "#484f58" : "#8b949e",
-                              marginTop: "1px",
-                              whiteSpace: "nowrap",
-                            }}>
-                              {formatDate(ms.due_date)}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+                        {PHASES.map((phase, i) => {
+                          const ms = milestones[phase.milestone];
+                          const isCompleted = i < activePhaseIdx || (i === activePhaseIdx && (s.status === 'published' || s.status === 'archived')) || (ms?.completed === 1);
+                          const isActive = i === activePhaseIdx && !isCompleted;
+                          const isFuture = !isCompleted && !isActive;
+                          const dotColor = isFuture ? '#484f58' : phase.color;
+
+                          // Flex for this dot's column: use the segment AFTER this dot (except last dot gets no flex)
+                          const flex = i < segFlex.length ? segFlex[i] : 0;
+
+                          return (
+                            <div key={phase.key} style={{ display: "flex", alignItems: "flex-start", flex: i < PHASES.length - 1 ? flex : "none" }}>
+                              {/* Dot column */}
+                              <div style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                position: "relative",
+                                zIndex: 2,
+                                flexShrink: 0,
+                              }}>
+                                {/* Colored line segment before this dot (for completed phases) */}
+                                {i > 0 && i <= activePhaseIdx && (
+                                  <div style={{
+                                    position: "absolute",
+                                    top: "7px",
+                                    right: "50%",
+                                    width: "200%",
+                                    height: "2px",
+                                    background: PHASES[i - 1].color,
+                                    zIndex: 1,
+                                  }} />
+                                )}
+                                {/* Dot */}
+                                <div style={{
+                                  width: "14px",
+                                  height: "14px",
+                                  borderRadius: "50%",
+                                  background: isCompleted || isActive ? dotColor : 'transparent',
+                                  border: `2px solid ${dotColor}`,
+                                  animation: isActive ? "phase-pulse 2s ease-in-out infinite" : "none",
+                                  boxShadow: isActive ? `0 0 0 3px ${dotColor}44` : "none",
+                                  transition: "all 0.3s",
+                                  position: "relative",
+                                  zIndex: 3,
+                                }} />
+                                {/* Label */}
+                                <span style={{
+                                  fontSize: "10px",
+                                  marginTop: "4px",
+                                  color: isFuture ? "#484f58" : dotColor,
+                                  fontWeight: isActive ? 600 : 400,
+                                  whiteSpace: "nowrap",
+                                }}>
+                                  {phase.label}
+                                </span>
+                                {/* Due date */}
+                                {ms?.due_date && (
+                                  <span style={{
+                                    fontSize: "9px",
+                                    color: isFuture ? "#484f58" : "#8b949e",
+                                    marginTop: "1px",
+                                    whiteSpace: "nowrap",
+                                  }}>
+                                    {formatDate(ms.due_date)}
+                                  </span>
+                                )}
+                              </div>
+                              {/* Week label in the gap */}
+                              {i < segWeeks.length && segWeeks[i] && segWeeks[i]! > 0 && (
+                                <div style={{
+                                  flex: 1,
+                                  display: "flex",
+                                  justifyContent: "center",
+                                  fontSize: "8px",
+                                  color: "#6e7681",
+                                  marginTop: "2px",
+                                }}>
+                                  {segWeeks[i]}w
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </Link>
