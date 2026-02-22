@@ -1,61 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 
-const ANGLES = [
-  'Captured with a 16mm wide-angle lens at a dramatic low angle, making the subject feel massive and imposing.',
-  'Shot from a bird\'s-eye overhead perspective, revealing the full scale of the scene below.',
-  'Captured at eye level with a 35mm lens, putting the viewer right in the middle of the action.',
-  'Shot from behind the subject looking forward into the scene, creating a sense of discovery and adventure.',
-  'Captured with a fisheye lens creating an exaggerated, immersive perspective that warps the environment.',
-  'Shot from a tilted Dutch angle with a 24mm lens, creating visual tension and unease.',
-];
-
-const LIGHTING = [
-  'dramatic, high-contrast cinematic lighting with deep shadows and intense highlights',
-  'golden hour backlighting that silhouettes the subject against a blazing sky',
-  'moody, atmospheric lighting with rays breaking through haze or smoke',
-  'harsh midday sun creating bold, saturated colors and sharp shadows',
-  'neon-lit nighttime scene with vivid color splashes and reflections',
-  'overcast, desaturated lighting that feels raw and documentary-style',
-];
-
-const MOODS = [
-  'intense and awe-inspiring',
-  'chaotic and overwhelming',
-  'mysterious and foreboding',
-  'raw and visceral',
-  'electrifying and larger-than-life',
-  'gritty and confrontational',
-];
-
-function pick<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function buildConcept({
-  title,
-  hook,
-  notes,
-  seriesTitle,
-}: {
-  title: string;
-  hook?: string | null;
-  notes?: string | null;
-  seriesTitle?: string | null;
-}) {
-  const context = [hook, notes].filter(Boolean).join('. ').trim();
-  const location = seriesTitle || 'an exotic location';
-
-  const subject = context
-    ? `the most extreme, exaggerated version of "${title}" — ${context}`
-    : `the most extreme, exaggerated version of "${title}"`;
-
-  const angle = pick(ANGLES);
-  const lighting = pick(LIGHTING);
-  const mood = pick(MOODS);
-
-  return `A photorealistic shot depicting ${subject}, set in ${location}. The scene is illuminated by ${lighting}, creating a ${mood} atmosphere. ${angle} Ultra-sharp focus on key details and textures. Rich, saturated colors. Clear negative space on one side for text overlay. If any text appears, maximum 1-3 words adding a surprising fact or scale — never repeating words from "${title}". Landscape 16:9 format.`;
-}
+const SUFFIX_RULES = `\n\nTechnical rules for the image prompt (append these exactly):\n- Photorealistic photography style with rich, saturated colors and ultra-sharp focus\n- If any text appears in the image, maximum 1-3 words that add intrigue — never repeat words from the episode title\n- Clear negative space on one side for text overlay\n- Landscape 16:9 format`;
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -71,12 +17,61 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const concept = buildConcept({
-    title: episode.title,
-    hook: episode.hook,
-    notes: episode.notes,
-    seriesTitle: episode.series_title,
-  });
+  const context = [
+    episode.hook && `Hook: ${episode.hook}`,
+    episode.notes && `Notes: ${episode.notes}`,
+    episode.series_title && `Series: ${episode.series_title}`,
+  ].filter(Boolean).join('\n');
 
-  return NextResponse.json({ concept });
+  // Use Sonnet to creatively generate a concept
+  const systemPrompt = `You are a YouTube thumbnail concept artist for a travel/food channel. The host explores extreme, otherworldly food and culture content.
+
+Your job: write ONE vivid, creative image generation prompt for a YouTube thumbnail. Think about what would make someone STOP scrolling.
+
+Rules:
+- Focus on the SCENE — the subject matter, environment, drama. Not the host.
+- Exaggerate HARD. Make it the most extreme, dramatic version of the concept.
+- Think like a cinematographer — describe camera angle, lighting, mood, textures.
+- Be narrative and descriptive, not a keyword list.
+- Each time you're asked, come up with a DIFFERENT creative angle/interpretation.
+- Output ONLY the image prompt, nothing else. No preamble, no explanation.`;
+
+  const userPrompt = `Episode title: "${episode.title}"
+${context ? context + '\n' : ''}
+Generate a vivid, creative thumbnail concept that exaggerates and adds intrigue to this episode. Make it attention-grabbing and visually shocking.`;
+
+  try {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) throw new Error('No ANTHROPIC_API_KEY');
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6-20250514',
+        max_tokens: 300,
+        temperature: 1,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }],
+      }),
+    });
+
+    const data = await res.json();
+    const concept = data?.content?.[0]?.text?.trim();
+
+    if (concept) {
+      return NextResponse.json({ concept: concept + SUFFIX_RULES });
+    }
+  } catch (e) {
+    console.error('Sonnet concept generation failed:', e);
+  }
+
+  // Fallback: simple template if API fails
+  return NextResponse.json({
+    concept: `A photorealistic, dramatic depiction of the most extreme version of "${episode.title}", set in ${episode.series_title || 'an exotic location'}. Vivid, saturated colors, dramatic lighting, ultra-sharp details.${SUFFIX_RULES}`,
+  });
 }
