@@ -23,7 +23,7 @@ function buildConcept({
     ? `the most extreme, exaggerated version of "${title}" — ${context}`
     : `the most extreme, exaggerated version of "${title}"`;
 
-  return `A photorealistic wide-angle shot depicting ${subject}, set in ${location}. The scene is illuminated by dramatic, high-contrast lighting that creates an intense, awe-inspiring atmosphere. Captured with a 16mm wide-angle lens at a low angle to make the subject feel massive and imposing. Ultra-sharp focus on key details and textures. Rich, saturated colors. 16:9 landscape format, YouTube thumbnail composition with clear negative space on one side for bold text overlay. If any text appears in the image, it must be maximum 1-3 words that add a surprising fact or scale comparison — never repeating any words from "${title}".`;
+  return `A photorealistic wide-angle shot depicting ${subject}, set in ${location}. The scene is illuminated by dramatic, high-contrast lighting that creates an intense, awe-inspiring atmosphere. Captured with a 16mm wide-angle lens at a low angle to make the subject feel massive and imposing. Ultra-sharp focus on key details and textures. Rich, saturated colors. Clear negative space on one side for text overlay. If any text appears, maximum 1-3 words adding a surprising fact or scale — never repeating words from "${title}". Landscape 16:9 format.`;
 }
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
