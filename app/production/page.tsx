@@ -33,17 +33,17 @@ export default async function ProductionDashboard() {
       </div>
 
       <div className="stats-bar">
-        <div className="stat-card">
-          <div className="stat-label">Active Series</div>
-          <div className="stat-value" style={{ color: "var(--green)" }}>{activeRow?.count || 0}</div>
+        <div className="stat-card" style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "20px" }}>
+          <div className="stat-label">Active Productions</div>
+          <div className="stat-value" style={{ color: "var(--green)", fontSize: "36px" }}>{activeRow?.count || 0}</div>
         </div>
-        <div className="stat-card">
+        <div className="stat-card" style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "20px" }}>
           <div className="stat-label">Total Milestones</div>
-          <div className="stat-value" style={{ color: "var(--accent)" }}>{totalRow?.count || 0}</div>
+          <div className="stat-value" style={{ color: "var(--accent)", fontSize: "36px" }}>{totalRow?.count || 0}</div>
         </div>
-        <div className="stat-card">
+        <div className="stat-card" style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "20px" }}>
           <div className="stat-label">Overdue Milestones</div>
-          <div className="stat-value" style={{ color: "var(--red)" }}>{overdue.length}</div>
+          <div className="stat-value" style={{ color: "var(--red)", fontSize: "36px" }}>{overdue.length}</div>
         </div>
       </div>
 
