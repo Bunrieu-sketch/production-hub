@@ -12,16 +12,18 @@ function buildConcept({
   notes?: string | null;
   seriesTitle?: string | null;
 }) {
-  const context = [hook, notes, seriesTitle].filter(Boolean).join('. ').trim();
+  const context = [hook, notes].filter(Boolean).join('. ').trim();
+  const location = seriesTitle || 'an exotic location';
 
-  // Focus on the SCENE — the most dramatic, exaggerated visual of the subject matter
-  // Do NOT focus on describing the host — just the environment, subject, and drama
-  // Text overlay: 1-3 words MAX that add intrigue BEYOND the title (never duplicate the title)
-  const scenePrompt = context
-    ? `The most extreme, dramatic, cinematic depiction of: "${title}" (context: ${context}).`
-    : `The most extreme, dramatic, cinematic depiction of: "${title}".`;
+  // Use Google's recommended photorealistic narrative style
+  // Describe the scene like a photographer — camera angle, lens, lighting, mood, textures
+  // Focus on the SUBJECT and ENVIRONMENT, not the host
+  // Any text: 1-3 words max, adds intrigue beyond title, never duplicates title words
+  const subject = context
+    ? `the most extreme, exaggerated version of "${title}" — ${context}`
+    : `the most extreme, exaggerated version of "${title}"`;
 
-  return `YouTube thumbnail scene: ${scenePrompt} Focus on the subject matter and environment — make it as visually shocking and attention-grabbing as possible. Dramatic lighting, vivid colors, 16:9 composition. If text overlay is needed, use only 1-3 words that ADD INTRIGUE beyond the title (e.g. an arrow pointing to something with a surprising fact, a scale comparison, or a provocative label). Never repeat words from the title "${title}".`;
+  return `A photorealistic wide-angle shot depicting ${subject}, set in ${location}. The scene is illuminated by dramatic, high-contrast lighting that creates an intense, awe-inspiring atmosphere. Captured with a 16mm wide-angle lens at a low angle to make the subject feel massive and imposing. Ultra-sharp focus on key details and textures. Rich, saturated colors. 16:9 landscape format, YouTube thumbnail composition with clear negative space on one side for bold text overlay. If any text appears in the image, it must be maximum 1-3 words that add a surprising fact or scale comparison — never repeating any words from "${title}".`;
 }
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
