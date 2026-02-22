@@ -7,10 +7,11 @@ export async function GET(req: NextRequest) {
   const seriesId = searchParams.get('series_id');
 
   let query = `
-    SELECT e.*, s.title as series_title, p.name as editor_name
+    SELECT e.*, s.title as series_title, p.name as editor_name, sp.brand_name as sponsor_name
     FROM episodes e
     LEFT JOIN series s ON e.series_id = s.id
     LEFT JOIN people p ON e.editor_id = p.id
+    LEFT JOIN sponsors sp ON sp.episode_id = e.id
   `;
   const params: string[] = [];
   if (seriesId) { query += ' WHERE e.series_id = ?'; params.push(seriesId); }
