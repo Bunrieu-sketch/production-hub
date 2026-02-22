@@ -1,6 +1,6 @@
 /**
  * One-time migration from production-hub.db and content-pipeline dashboard.db
- * into mission-control.db.
+ * into production-hub.db.
  *
  * Run via: npx tsx lib/migrate-production.ts
  */
@@ -9,7 +9,7 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 
-const MC_DB = path.join(__dirname, '..', 'mission-control.db');
+const MC_DB = path.join(__dirname, '..', 'production-hub.db');
 const PROD_HUB_DB = path.resolve(__dirname, '../../production-hub/production-hub.db');
 const PIPELINE_DB = path.resolve(__dirname, '../../content-pipeline/dashboard.db');
 

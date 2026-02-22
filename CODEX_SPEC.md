@@ -1,7 +1,7 @@
 # Documents Viewer Upgrade Spec
 
 ## Overview
-Upgrade the Documents tab in Mission Control to be the ultimate document viewer — aggregating all auto-generated content (briefs, reports, chats) with better organization, search, and navigation.
+Upgrade the Documents tab in Production Hub to be the ultimate document viewer — aggregating all auto-generated content (briefs, reports, chats) with better organization, search, and navigation.
 
 ## Current State
 - `app/docs/page.tsx` — basic sidebar + viewer layout
@@ -111,7 +111,7 @@ Add filter buttons above the list:
 
 ## Design Notes
 - Keep the existing dark theme
-- Match the existing Mission Control aesthetic
+- Match the existing Production Hub aesthetic
 - Sidebar width: ~320px
 - Use Lucide icons consistently
 - Smooth transitions on selection

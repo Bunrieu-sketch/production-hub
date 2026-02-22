@@ -3,7 +3,7 @@ import { getDb } from '@/lib/db';
 
 const TEAMUP_API_BASE = 'https://api.teamup.com';
 
-// Map TeamUp sub-calendar names to Mission Control categories
+// Map TeamUp sub-calendar names to Production Hub categories
 const CATEGORY_MAP: Record<string, string> = {
   'shoot': 'shoot',
   'shooting': 'shoot',

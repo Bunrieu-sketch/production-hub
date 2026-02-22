@@ -1,7 +1,7 @@
 # Health Council — Build Spec
 
 ## Overview
-Add a "Health Council" page to Mission Control (Next.js app on port 5053). This is an AI-powered system health dashboard that displays results from automated audits of the OpenClaw/Monty infrastructure.
+Add a "Health Council" page to Production Hub (Next.js app on port 5053). This is an AI-powered system health dashboard that displays results from automated audits of the OpenClaw/Monty infrastructure.
 
 ## Architecture
 
@@ -11,7 +11,7 @@ The Health Council runs as a **cron job at 3:30 AM daily** (handled separately b
 
 ### 1. Database Schema Addition
 
-Add to `mission-control.db` (SQLite via better-sqlite3):
+Add to `production-hub.db` (SQLite via better-sqlite3):
 
 ```sql
 CREATE TABLE IF NOT EXISTS health_reports (
@@ -42,7 +42,7 @@ The `report_json` column stores:
     // ... 8 more areas
   ],
   "recommendations": [
-    { "number": 1, "severity": "warning", "text": "Add API tests for mission-control" }
+    { "number": 1, "severity": "warning", "text": "Add API tests for production-hub" }
   ],
   "council": {
     "moderator": "claude-opus-4-6",
@@ -77,7 +77,7 @@ All in `app/api/health-council/`:
 
 **Route:** `/health-council` (create `app/health-council/page.tsx`)
 
-**Layout — match existing Mission Control design:**
+**Layout — match existing Production Hub design:**
 - Dark theme (same as rest of app)
 - Use existing globals.css styles
 
@@ -137,7 +137,7 @@ Create an initial seed report so the page isn't empty. Use realistic placeholder
 
 ## Design Guidelines
 
-- Match existing Mission Control aesthetic exactly (dark theme, same card styles, same font)
+- Match existing Production Hub aesthetic exactly (dark theme, same card styles, same font)
 - Cards should have subtle hover effects
 - Status colors: green (#22c55e), yellow (#eab308), red (#ef4444)
 - Use the existing CSS variables and patterns from globals.css
@@ -168,6 +168,6 @@ lib/
 ## Important Notes
 - Use `better-sqlite3` (already installed) for DB access
 - Use existing patterns from other pages (check `app/page.tsx`, `app/pipeline/sponsors/page.tsx` for style reference)
-- The DB file is at the project root: `mission-control.db`
+- The DB file is at the project root: `production-hub.db`
 - Do NOT install new dependencies — use what's already in package.json
 - Run the DB migration (CREATE TABLE) in the lib file on first access (same pattern used elsewhere)

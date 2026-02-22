@@ -2,14 +2,14 @@
 
 ## Source of Truth
 
-**TeamUp is the source of truth for scheduling.** Mission Control syncs FROM TeamUp, not the other way around.
+**TeamUp is the source of truth for scheduling.** Production Hub syncs FROM TeamUp, not the other way around.
 
 ## Workflow
 
 ```
 TeamUp (source of truth)
     ↓ (sync button pulls)
-Mission Control Calendar (read-only view)
+Production Hub Calendar (read-only view)
 ```
 
 ## How to Use
@@ -18,7 +18,7 @@ Mission Control Calendar (read-only view)
 
 - Go to your TeamUp calendar in the browser/app
 - Create, edit, or delete events there
-- Then click **"Sync from TeamUp"** in Mission Control
+- Then click **"Sync from TeamUp"** in Production Hub
 
 ### 2. Sync Button
 
@@ -28,7 +28,7 @@ Mission Control Calendar (read-only view)
 
 ### 3. What Gets Synced
 
-| TeamUp Event | Mission Control |
+| TeamUp Event | Production Hub |
 |--------------|-----------------|
 | Title | Event title |
 | Start/End dates | Event dates |
@@ -51,9 +51,9 @@ Use these sub-calendar names in TeamUp for proper categorization:
 
 ## Rules
 
-1. **Always edit in TeamUp first** — Mission Control is read-only for calendar events
+1. **Always edit in TeamUp first** — Production Hub is read-only for calendar events
 2. **Sync after making changes** — Click the sync button to pull updates
-3. **Don't duplicate events** — TeamUp events replace Mission Control's inferred calendar events
+3. **Don't duplicate events** — TeamUp events replace Production Hub's inferred calendar events
 4. **Use consistent naming** — Sub-calendar names must match exactly (case-insensitive)
 
 ## API Configuration

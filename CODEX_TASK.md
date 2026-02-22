@@ -1,7 +1,7 @@
-# Mission Control Gantt API Improvements
+# Production Hub Gantt API Improvements
 
 ## Current State
-The mission-control repo has uncommitted changes in `app/api/gantt/route.ts` that:
+The production-hub repo has uncommitted changes in `app/api/gantt/route.ts` that:
 1. Filter out published series and completed past work
 2. Consolidate phases by type (preprod → one bar, shoot → one bar, post+publish → "Edit & Publish")
 3. Calculate average progress for grouped phases

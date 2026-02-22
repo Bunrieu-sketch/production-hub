@@ -198,7 +198,7 @@ net   = gross × 0.8  (20% agency)`}
         </h2>
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8, padding: 16 }}>
           <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>
-            <strong style={{ color: 'var(--text)' }}>Single source of truth:</strong> <code style={{ background: 'var(--bg)', padding: '2px 6px', borderRadius: 4 }}>mission-control.db</code>
+            <strong style={{ color: 'var(--text)' }}>Single source of truth:</strong> <code style={{ background: 'var(--bg)', padding: '2px 6px', borderRadius: 4 }}>production-hub.db</code>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
             <div style={{ background: 'var(--bg)', padding: 10, borderRadius: 6, border: '1px solid var(--border)' }}>

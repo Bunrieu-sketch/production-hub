@@ -69,7 +69,7 @@ export function Sidebar() {
     <nav className="sidebar">
       <div className="sidebar-logo">
         <LayoutGrid size={22} />
-        <span className="logo-text">Mission Control</span>
+        <span className="logo-text">Production Hub</span>
       </div>
 
       {/* Tasks — home */}

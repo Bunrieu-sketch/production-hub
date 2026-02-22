@@ -92,7 +92,7 @@ export default function HomePage() {
     <div className="mc-layout">
       <div className="mc-main">
         <div className="mc-header">
-          <h1>Mission Control</h1>
+          <h1>Production Hub</h1>
           <button className="btn-primary" onClick={() => setShowModal(true)}>+ New Task</button>
         </div>
 

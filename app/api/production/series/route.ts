@@ -17,5 +17,20 @@ export async function POST(req: NextRequest) {
   const result = db.prepare(
     "INSERT INTO series (title, location, status, target_shoot_start, target_shoot_end, notes, budget_target) VALUES (?, ?, ?, ?, ?, ?, ?)"
   ).run(data.title, data.location, data.status || 'ideation', data.target_shoot_start, data.target_shoot_end, data.notes, data.budget_target);
-  return NextResponse.json({ id: result.lastInsertRowid });
+
+  const id = result.lastInsertRowid as number;
+
+  // Auto-create the 4 standard phase milestones
+  const insertMilestone = db.prepare(
+    'INSERT INTO milestones (series_id, week_number, title, due_date) VALUES (?, ?, ?, ?)'
+  );
+  const createMilestones = db.transaction(() => {
+    insertMilestone.run(id, 1, 'Pre-Production', data.phase_pre_prod || null);
+    insertMilestone.run(id, 2, 'Shooting', data.phase_shooting || null);
+    insertMilestone.run(id, 3, 'Editing', data.phase_editing || null);
+    insertMilestone.run(id, 4, 'Publish', data.phase_publish || null);
+  });
+  createMilestones();
+
+  return NextResponse.json({ id });
 }

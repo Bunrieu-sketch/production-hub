@@ -1,13 +1,13 @@
 # Task: YouTube Media Kit Generator
 
 ## Goal
-Build a `/media-kit` page in Mission Control that lets Andrew configure his channel stats, auto-pulls sponsor history from the DB, and generates a professional printable/shareable media kit he can send to brands.
+Build a `/media-kit` page in Production Hub that lets Andrew configure his channel stats, auto-pulls sponsor history from the DB, and generates a professional printable/shareable media kit he can send to brands.
 
 ---
 
 ## Stack
 - Next.js 15 + TypeScript + Tailwind (dark theme — existing codebase)
-- SQLite via better-sqlite3 (existing `mission-control.db`)
+- SQLite via better-sqlite3 (existing `production-hub.db`)
 - No new npm dependencies unless absolutely needed
 
 ---
@@ -79,7 +79,7 @@ Auto-save on blur (PATCH request) — no explicit save button needed.
 ### `app/media-kit/preview/page.tsx` — The Actual Media Kit
 This is a standalone, printable/shareable page. It should look BEAUTIFUL — the kind of thing Andrew can literally send to a brand manager and be proud of.
 
-Design: Dark background (#0d1117), gold accents (#f0a500), clean typography. NOT the Mission Control nav — this page has no sidebar or nav. Full-width, single-column layout.
+Design: Dark background (#0d1117), gold accents (#f0a500), clean typography. NOT the Production Hub nav — this page has no sidebar or nav. Full-width, single-column layout.
 
 Structure of the media kit:
 

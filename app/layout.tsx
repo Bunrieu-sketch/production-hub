@@ -7,7 +7,7 @@ import { Sidebar } from '@/components/Sidebar';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Mission Control',
+  title: 'Production Hub',
   description: 'Task management and project hub',
 };
 

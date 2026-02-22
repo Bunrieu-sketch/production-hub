@@ -62,6 +62,29 @@ export default function ProductionForm({ initial }: Props) {
           <input type="date" name="target_shoot_end" defaultValue={v("target_shoot_end")} className="input" />
         </div>
       </div>
+      {/* Phase milestone dates */}
+      <div style={{ borderTop: "1px solid var(--border)", paddingTop: "16px", marginTop: "8px" }}>
+        <label className="label" style={{ marginBottom: "12px", fontSize: "13px", color: "var(--text-dim)" }}>Phase Milestones</label>
+        <div className="form-grid">
+          <div className="form-group">
+            <label className="label">Pre-Production Date</label>
+            <input type="date" name="phase_pre_prod" defaultValue={v("phase_pre_prod")} className="input" />
+          </div>
+          <div className="form-group">
+            <label className="label">Shooting Date</label>
+            <input type="date" name="phase_shooting" defaultValue={v("phase_shooting")} className="input" />
+          </div>
+          <div className="form-group">
+            <label className="label">Editing Date</label>
+            <input type="date" name="phase_editing" defaultValue={v("phase_editing")} className="input" />
+          </div>
+          <div className="form-group">
+            <label className="label">Publish Date</label>
+            <input type="date" name="phase_publish" defaultValue={v("phase_publish")} className="input" />
+          </div>
+        </div>
+      </div>
+
       <div className="form-group">
         <label className="label">Notes</label>
         <textarea name="notes" rows={3} defaultValue={v("notes")} className="textarea" />

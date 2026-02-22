@@ -1,13 +1,13 @@
-# Mission Control Merge Spec — Production Hub + Sponsors V2
+# Production Hub Merge Spec — Production Hub + Sponsors V2
 
 ## Overview
 
-Merge production-hub into mission-control as a unified dashboard. Enhance sponsors with V2 features. Single app, single database, single port (5053).
+Merge production-hub into production-hub as a unified dashboard. Enhance sponsors with V2 features. Single app, single database, single port (5053).
 
 ## CRITICAL — Read First
 
 1. **Design System:** Follow `/Users/montymac/.openclaw/workspace/DESIGN_SYSTEM.md` exactly
-2. **Existing patterns:** Reference existing mission-control components
+2. **Existing patterns:** Reference existing production-hub components
 3. **Production Hub source:** `/Users/montymac/.openclaw/workspace/production-hub/`
 4. **Sponsors V2 spec:** `/Users/montymac/.openclaw/workspace/content-pipeline/SPONSORS-V2-SPEC.md`
 
@@ -16,7 +16,7 @@ Merge production-hub into mission-control as a unified dashboard. Enhance sponso
 ```tsx
 // components/Sidebar.tsx — rebuild with this structure:
 
-Logo: Mission Control (LayoutGrid icon)
+Logo: Production Hub (LayoutGrid icon)
 ━━━━━━━━━━━━━━━━━━━━━
 Tasks (Kanban icon) — "/" — KEEP AS HOME
 
@@ -38,7 +38,7 @@ Design System (Palette icon) — "/design-system"
 
 ## Database Schema Updates
 
-Add these tables to `mission-control.db` (use better-sqlite3, same pattern as existing):
+Add these tables to `production-hub.db` (use better-sqlite3, same pattern as existing):
 
 ```sql
 -- Series (production trips)
@@ -317,7 +317,7 @@ Create `lib/migrate-production.ts`:
 
 1. Read from production-hub/production-hub.db
 2. Read from content-pipeline/dashboard.db (sponsors)
-3. Insert into mission-control.db with schema mapping
+3. Insert into production-hub.db with schema mapping
 4. Calculate deal_value_net = deal_value_gross * 0.8 for sponsors
 
 Run migration on first API call (check if series table exists).
@@ -366,4 +366,4 @@ Verify on http://localhost:5053:
 1. Create branch: `feat/production-hub-merge`
 2. Commit all changes
 3. Push and create PR
-4. Title: "feat: merge production-hub into mission-control with sponsors v2"
+4. Title: "feat: merge production-hub into production-hub with sponsors v2"

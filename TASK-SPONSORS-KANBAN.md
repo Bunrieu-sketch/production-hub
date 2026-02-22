@@ -119,4 +119,4 @@ Add tabs above Kanban: All | Active | Needs Attention
 ## Don't Do
 - Don't create a separate calendar (use existing `/production/calendar`)
 - Don't create new database tables (just add sub_status column)
-- Don't modify the database file location (stay in mission-control.db)
+- Don't modify the database file location (stay in production-hub.db)

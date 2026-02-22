@@ -155,7 +155,7 @@ Views are locked at 30 days post-publish for invoicing.
 - 30-day lock triggers invoice-ready alert
 
 ## Database
-Single source of truth: `mission-control.db`
+Single source of truth: `production-hub.db`
 - `episodes` — all videos, view counts, YouTube IDs
 - `sponsors` — all deals, linked to episodes via episode_id
 ```
@@ -177,7 +177,7 @@ Create a simple docs page at `/docs/sponsor-crm` that renders the skill markdown
 
 ### Create:
 - `app/api/youtube/sync/route.ts` — YouTube sync endpoint
-- `skills/sponsor-crm/SKILL.md` — Skill documentation (in workspace, not mission-control)
+- `skills/sponsor-crm/SKILL.md` — Skill documentation (in workspace, not production-hub)
 - `app/docs/sponsor-crm/page.tsx` — Rules documentation page
 
 ### Modify:

@@ -33,7 +33,7 @@ const projects: Project[] = [
     icon: FolderKanban,
   },
   {
-    name: 'Mission Control',
+    name: 'Production Hub',
     description: 'Task management and project hub',
     port: 5053,
     icon: FileText,
