@@ -256,204 +256,190 @@ export default function EditEpisodeModal({ episodeId, onClose, onSaved }: Props)
           <div style={{ color: 'var(--text-dim)', fontSize: 13 }}>Loading episode…</div>
         ) : (
           <>
-            <div className="grid-2">
-              <div className="form-group">
-                <label className="form-label">Stage</label>
-                <select value={form.stage} onChange={e => set('stage', e.target.value)}>
-                  {STAGES.map(s => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Editor</label>
-                <select value={form.editor_id} onChange={e => set('editor_id', e.target.value)}>
-                  <option value="">Unassigned</option>
-                  {editors.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
-                </select>
-              </div>
-            </div>
-
-            <div className="section-label" style={{ marginTop: 6 }}>Media</div>
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                <span>Thumbnail Concept</span>
-                <button
-                  className="btn btn-secondary"
-                  onClick={suggestConcept}
-                  disabled={suggesting || loading}
-                  style={{ fontSize: 11, padding: '4px 8px', background: 'var(--accent)', color: '#fff' }}
-                >
-                  {suggesting ? 'Suggesting…' : 'Suggest Concept'}
-                </button>
-              </label>
-              <textarea value={form.thumbnail_concept} onChange={e => set('thumbnail_concept', e.target.value)} rows={3} />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
-                <button
-                  className="btn btn-primary"
-                  onClick={generateThumbnails}
-                  disabled={generating || loading}
-                  style={{ minWidth: 180 }}
-                >
-                  {generating ? 'Generating…' : 'Generate Thumbnails'}
-                </button>
-                <button
-                  className="btn btn-secondary"
-                  onClick={generateThumbnails}
-                  disabled={generating || loading}
-                >
-                  Regenerate
-                </button>
-                {generating && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-dim)', fontSize: 12 }}>
-                    <svg width="14" height="14" viewBox="0 0 50 50" aria-hidden="true">
-                      <circle cx="25" cy="25" r="20" fill="none" stroke="var(--accent)" strokeWidth="5" strokeLinecap="round" strokeDasharray="31.4 31.4">
-                        <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="0.9s" repeatCount="indefinite" />
-                      </circle>
-                    </svg>
-                    <span>Generating images…</span>
+            <div style={{ display: 'flex', gap: 20 }}>
+              {/* LEFT COLUMN — Details */}
+              <div style={{ flex: '1 1 50%', minWidth: 0 }}>
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">Stage</label>
+                    <select value={form.stage} onChange={e => set('stage', e.target.value)}>
+                      {STAGES.map(s => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
                   </div>
-                )}
+                  <div className="form-group">
+                    <label className="form-label">Editor</label>
+                    <select value={form.editor_id} onChange={e => set('editor_id', e.target.value)}>
+                      <option value="">Unassigned</option>
+                      {editors.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="section-label" style={{ marginTop: 6 }}>Links</div>
+                <div className="form-group">
+                  <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>YouTube URL</span>
+                    {form.youtube_url && (
+                      <button className="btn btn-secondary" type="button" onClick={() => window.open(form.youtube_url, '_blank', 'noopener,noreferrer')} style={{ fontSize: 11, padding: '4px 8px' }}>Open</button>
+                    )}
+                  </label>
+                  <input value={form.youtube_url} onChange={e => set('youtube_url', e.target.value)} placeholder="https://youtube.com/..." />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>Script URL</span>
+                    {form.script_url && (
+                      <button className="btn btn-secondary" type="button" onClick={() => window.open(form.script_url, '_blank', 'noopener,noreferrer')} style={{ fontSize: 11, padding: '4px 8px' }}>Open</button>
+                    )}
+                  </label>
+                  <input value={form.script_url} onChange={e => set('script_url', e.target.value)} placeholder="https://..." />
+                </div>
+
+                <div className="section-label" style={{ marginTop: 6 }}>Content</div>
+                <div className="form-group">
+                  <label className="form-label">Hook</label>
+                  <textarea value={form.hook} onChange={e => set('hook', e.target.value)} rows={2} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Outline</label>
+                  <textarea value={form.outline} onChange={e => set('outline', e.target.value)} rows={2} />
+                </div>
+
+                <div className="section-label" style={{ marginTop: 6 }}>Schedule</div>
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">Shoot Date</label>
+                    <input type="date" value={form.shoot_date} onChange={e => set('shoot_date', e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Rough Cut Due</label>
+                    <input type="date" value={form.rough_cut_due} onChange={e => set('rough_cut_due', e.target.value)} />
+                  </div>
+                </div>
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">Publish Date</label>
+                    <input type="date" value={form.publish_date} onChange={e => set('publish_date', e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Actual Publish</label>
+                    <input type="date" value={form.actual_publish_date} onChange={e => set('actual_publish_date', e.target.value)} />
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ marginTop: 6 }}>
+                  <label className="form-label">Notes</label>
+                  <textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={2} />
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
-                {previewSlots.map((slot) => {
-                  const url = thumbnailPreviews[slot];
-                  const selected = url && form.thumbnail_url === url;
-                  return (
-                    <div key={slot} style={{ flex: 1 }}>
-                      <div
-                        style={{
-                          width: '100%',
-                          aspectRatio: '16 / 9',
-                          borderRadius: 10,
-                          border: `1px ${url ? 'solid' : 'dashed'} ${selected ? 'var(--accent)' : 'var(--border)'}`,
-                          background: url ? 'var(--card)' : 'transparent',
-                          overflow: 'hidden',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: 'var(--text-dim)',
-                          fontSize: 12,
-                        }}
-                      >
-                        {url ? (
-                          <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                            <img src={url} alt={`Generated thumbnail ${slot + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setThumbnailPreviews(prev => {
-                                  const next = [...prev];
-                                  next[slot] = '';
-                                  return next;
-                                });
-                                if (form.thumbnail_url === url) set('thumbnail_url', '');
-                              }}
-                              style={{
-                                position: 'absolute', top: 4, right: 4,
-                                width: 22, height: 22, borderRadius: '50%',
-                                background: 'rgba(0,0,0,0.7)', border: 'none',
-                                color: '#fff', fontSize: 12, cursor: 'pointer',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              }}
-                              title="Remove"
-                            >✕</button>
-                          </div>
-                        ) : (
-                          'No preview'
-                        )}
+
+              {/* RIGHT COLUMN — Thumbnails */}
+              <div style={{ flex: '1 1 50%', minWidth: 0 }}>
+                <div className="section-label">Thumbnail</div>
+                <div className="form-group">
+                  <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <span>Concept</span>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={suggestConcept}
+                      disabled={suggesting || loading}
+                      style={{ fontSize: 11, padding: '4px 8px', background: 'var(--accent)', color: '#fff' }}
+                    >
+                      {suggesting ? 'Suggesting…' : 'Suggest Concept'}
+                    </button>
+                  </label>
+                  <textarea value={form.thumbnail_concept} onChange={e => set('thumbnail_concept', e.target.value)} rows={3} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                    <button
+                      className="btn btn-primary"
+                      onClick={generateThumbnails}
+                      disabled={generating || loading}
+                      style={{ flex: 1 }}
+                    >
+                      {generating ? 'Generating…' : 'Generate Thumbnails'}
+                    </button>
+                    {generating && (
+                      <svg width="14" height="14" viewBox="0 0 50 50" aria-hidden="true">
+                        <circle cx="25" cy="25" r="20" fill="none" stroke="var(--accent)" strokeWidth="5" strokeLinecap="round" strokeDasharray="31.4 31.4">
+                          <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="0.9s" repeatCount="indefinite" />
+                        </circle>
+                      </svg>
+                    )}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                  {previewSlots.map((slot) => {
+                    const url = thumbnailPreviews[slot];
+                    const selected = url && form.thumbnail_url === url;
+                    return (
+                      <div key={slot} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div
+                          style={{
+                            width: '100%',
+                            aspectRatio: '16 / 9',
+                            borderRadius: 8,
+                            border: `1px ${url ? 'solid' : 'dashed'} ${selected ? 'var(--accent)' : 'var(--border)'}`,
+                            background: url ? 'var(--card)' : 'transparent',
+                            overflow: 'hidden',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--text-dim)',
+                            fontSize: 11,
+                            position: 'relative',
+                          }}
+                        >
+                          {url ? (
+                            <>
+                              <img src={url} alt={`Thumbnail ${slot + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setThumbnailPreviews(prev => { const next = [...prev]; next[slot] = ''; return next; });
+                                  if (form.thumbnail_url === url) set('thumbnail_url', '');
+                                }}
+                                style={{
+                                  position: 'absolute', top: 4, right: 4,
+                                  width: 20, height: 20, borderRadius: '50%',
+                                  background: 'rgba(0,0,0,0.7)', border: 'none',
+                                  color: '#fff', fontSize: 11, cursor: 'pointer',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                }}
+                                title="Remove"
+                              >✕</button>
+                              {!selected && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); useAsThumbnail(url); }}
+                                  style={{
+                                    position: 'absolute', bottom: 4, right: 4,
+                                    padding: '2px 8px', borderRadius: 6,
+                                    background: 'rgba(0,0,0,0.7)', border: '1px solid rgba(255,255,255,0.2)',
+                                    color: '#fff', fontSize: 10, cursor: 'pointer',
+                                  }}
+                                >Use</button>
+                              )}
+                              {selected && (
+                                <div style={{
+                                  position: 'absolute', bottom: 4, left: 4,
+                                  padding: '2px 8px', borderRadius: 6,
+                                  background: 'var(--accent)', color: '#fff', fontSize: 10, fontWeight: 600,
+                                }}>Selected</div>
+                              )}
+                            </>
+                          ) : (
+                            <span style={{ opacity: 0.5 }}>—</span>
+                          )}
+                        </div>
                       </div>
-                      <button
-                        className="btn btn-secondary"
-                        style={{ width: '100%', marginTop: 6, fontSize: 11 }}
-                        onClick={() => url && useAsThumbnail(url)}
-                        disabled={!url}
-                      >
-                        {selected ? 'Selected Thumbnail' : 'Use as Thumbnail'}
-                      </button>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
-            <div className="section-label" style={{ marginTop: 6 }}>Links</div>
-            <div className="grid-2">
-              <div className="form-group">
-                <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span>YouTube URL</span>
-                  {form.youtube_url && (
-                    <button
-                      className="btn btn-secondary"
-                      type="button"
-                      onClick={() => window.open(form.youtube_url, '_blank', 'noopener,noreferrer')}
-                      style={{ fontSize: 11, padding: '4px 8px' }}
-                    >
-                      Open
-                    </button>
-                  )}
-                </label>
-                <input value={form.youtube_url} onChange={e => set('youtube_url', e.target.value)} placeholder="https://youtube.com/..." />
-              </div>
-              <div className="form-group">
-                <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span>Script URL</span>
-                  {form.script_url && (
-                    <button
-                      className="btn btn-secondary"
-                      type="button"
-                      onClick={() => window.open(form.script_url, '_blank', 'noopener,noreferrer')}
-                      style={{ fontSize: 11, padding: '4px 8px' }}
-                    >
-                      Open
-                    </button>
-                  )}
-                </label>
-                <input value={form.script_url} onChange={e => set('script_url', e.target.value)} placeholder="https://..." />
-              </div>
-            </div>
-
-            <div className="section-label" style={{ marginTop: 6 }}>Content</div>
-            <div className="grid-2">
-              <div className="form-group">
-                <label className="form-label">Hook</label>
-                <textarea value={form.hook} onChange={e => set('hook', e.target.value)} rows={3} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Outline</label>
-                <textarea value={form.outline} onChange={e => set('outline', e.target.value)} rows={3} />
-              </div>
-            </div>
-
-            <div className="section-label" style={{ marginTop: 6 }}>Schedule</div>
-            <div className="grid-2">
-              <div className="form-group">
-                <label className="form-label">Shoot Date</label>
-                <input type="date" value={form.shoot_date} onChange={e => set('shoot_date', e.target.value)} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Rough Cut Due</label>
-                <input type="date" value={form.rough_cut_due} onChange={e => set('rough_cut_due', e.target.value)} />
-              </div>
-            </div>
-            <div className="grid-2">
-              <div className="form-group">
-                <label className="form-label">Publish Date</label>
-                <input type="date" value={form.publish_date} onChange={e => set('publish_date', e.target.value)} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Actual Publish Date</label>
-                <input type="date" value={form.actual_publish_date} onChange={e => set('actual_publish_date', e.target.value)} />
-              </div>
-            </div>
-
-            <div className="section-label" style={{ marginTop: 6 }}>Notes</div>
-            <div className="form-group">
-              <label className="form-label">Notes</label>
-              <textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={4} />
-            </div>
-
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8, alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12, alignItems: 'center' }}>
               {saved && <span style={{ fontSize: 12, color: 'var(--green)' }}>Saved</span>}
               <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
               <button className="btn btn-primary" onClick={save} disabled={saving || loading || !form.title}>
