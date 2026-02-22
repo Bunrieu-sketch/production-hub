@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Calendar, Camera, Link as LinkIcon } from 'lucide-react';
+import EditEpisodeModal from '@/components/production/EditEpisodeModal';
 
 interface Episode {
   id: number;
@@ -65,6 +66,7 @@ export default function EpisodesPage() {
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [failedThumbs, setFailedThumbs] = useState<Set<number>>(new Set());
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
+  const [selectedEpisodeId, setSelectedEpisodeId] = useState<number | null>(null);
 
   const load = () => {
     const url = seriesFilter ? `/api/episodes?series_id=${seriesFilter}` : '/api/episodes';
@@ -217,7 +219,9 @@ export default function EpisodesPage() {
                 key={ep.id}
                 onMouseEnter={() => setHoveredRow(ep.id)}
                 onMouseLeave={() => setHoveredRow(null)}
+                onClick={() => setSelectedEpisodeId(ep.id)}
                 style={{
+                  cursor: 'pointer',
                   display: 'grid',
                   gridTemplateColumns: '100px 2fr 1fr 120px 90px 120px 140px 40px',
                   gap: 12,
@@ -331,9 +335,10 @@ export default function EpisodesPage() {
                         draggable
                         onDragStart={() => setDragging(ep.id)}
                         onDragEnd={() => { setDragging(null); setDragOver(null); }}
+                        onClick={() => { if (dragging === null) setSelectedEpisodeId(ep.id); }}
                         style={{
                           background: 'var(--bg)', border: '1px solid var(--border)',
-                          borderRadius: 10, padding: 10, cursor: 'grab',
+                          borderRadius: 10, padding: 10, cursor: 'pointer',
                           opacity: dragging === ep.id ? 0.5 : 1,
                           transition: 'opacity 0.15s',
                           display: 'flex',
@@ -435,6 +440,14 @@ export default function EpisodesPage() {
             );
           })}
         </div>
+      )}
+
+      {selectedEpisodeId !== null && (
+        <EditEpisodeModal
+          episodeId={selectedEpisodeId}
+          onClose={() => setSelectedEpisodeId(null)}
+          onSaved={() => { setSelectedEpisodeId(null); load(); }}
+        />
       )}
     </div>
   );

@@ -23,8 +23,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const fields = [
     'title', 'stage', 'episode_type', 'shoot_date', 'rough_cut_due',
     'publish_date', 'actual_publish_date', 'editor_id', 'youtube_video_id',
-    'youtube_url', 'view_count', 'thumbnail_concept', 'hook', 'outline', 'notes',
-    'sort_order',
+    'youtube_url', 'script_url', 'view_count', 'thumbnail_url', 'thumbnail_concept',
+    'hook', 'outline', 'notes', 'sort_order',
   ];
   const updates: string[] = [];
   const values: unknown[] = [];
