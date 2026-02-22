@@ -114,7 +114,8 @@ export default function EditEpisodeModal({ episodeId, onClose, onSaved }: Props)
         const nextForm = mapEpisodeToForm(data);
         setForm(nextForm);
         setInitial(nextForm);
-        setThumbnailPreviews([]);
+        // If episode has a saved thumbnail, show it in the first slot
+        setThumbnailPreviews(data.thumbnail_url ? [data.thumbnail_url] : []);
         setSeriesTitle(data.series_title || '');
         setEpisodeType(data.episode_type || '');
       } finally {
