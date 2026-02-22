@@ -53,12 +53,9 @@ export default async function SeriesPage() {
 
   return (
     <div className="page">
-      <div className="page-header">
-        <div>
-          <div className="page-title">Productions</div>
-          <div className="muted">Manage every production and its milestones</div>
-        </div>
-        <Link href="/production/series/new" className="button button-primary">New Series</Link>
+      <div>
+        <div className="page-title">Productions</div>
+        <div className="muted">Manage every production and its milestones</div>
       </div>
 
       <div className="list" style={{ gap: "12px" }}>
@@ -96,21 +93,20 @@ export default async function SeriesPage() {
                       )}
                     </div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
-                    <div style={{ textAlign: "right" }}>
-                      <div className="muted" style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Milestones</div>
-                      <div style={{ fontWeight: 600 }}>{s.done_count}/{s.total_count}</div>
-                    </div>
-                    <div style={{ width: "80px", height: "6px", background: "var(--border)", borderRadius: "999px" }}>
-                      <div style={{
-                        width: `${s.total_count ? (s.done_count / s.total_count) * 100 : 0}%`,
-                        height: "100%",
-                        background: color,
-                        borderRadius: "999px",
-                        transition: "width 0.3s",
-                      }} />
-                    </div>
+                </div>
+                {/* Milestone progress bar - full width */}
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "12px" }}>
+                  <div style={{ flex: 1, height: "6px", background: "var(--border)", borderRadius: "999px" }}>
+                    <div style={{
+                      width: `${s.total_count ? (s.done_count / s.total_count) * 100 : 0}%`,
+                      height: "100%",
+                      background: color,
+                      borderRadius: "999px",
+                      transition: "width 0.3s",
+                      minWidth: s.done_count > 0 ? "8px" : "0",
+                    }} />
                   </div>
+                  <span className="muted" style={{ fontSize: "12px", flexShrink: 0 }}>{s.done_count}/{s.total_count} milestones</span>
                 </div>
               </div>
             </Link>
@@ -119,6 +115,9 @@ export default async function SeriesPage() {
         {series.length === 0 && (
           <div className="panel muted" style={{ textAlign: "center", padding: "40px" }}>No series yet. Create one.</div>
         )}
+        <Link href="/production/series/new" className="card card-hover" style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "14px", color: "var(--text-dim)", gap: "8px", borderStyle: "dashed" }}>
+          + New Series
+        </Link>
       </div>
     </div>
   );
