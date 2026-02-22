@@ -1,6 +1,16 @@
 import { getDb } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const db = getDb();
+  const series = db.prepare("SELECT * FROM series WHERE id = ?").get(id) as any;
+  if (!series) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  series.milestones = db.prepare("SELECT * FROM milestones WHERE series_id = ? ORDER BY week_number").all(id);
+  series.episodes = db.prepare("SELECT * FROM episodes WHERE series_id = ? ORDER BY sort_order").all(id);
+  return NextResponse.json(series);
+}
+
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const data = await req.json();

@@ -1,6 +1,7 @@
 import { getDb } from '@/lib/db';
 import Link from 'next/link';
 import AddProductionButton from './AddProductionButton';
+import SeriesCard from '@/components/production/SeriesCard';
 
 export const dynamic = "force-dynamic";
 
@@ -112,7 +113,7 @@ export default async function SeriesPage() {
           const milestones = seriesMilestones[s.id] || {};
 
           return (
-            <Link key={s.id} href={`/production/series/${s.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+            <SeriesCard key={s.id} seriesId={s.id}>
               <div className="card card-hover" style={{ borderLeft: `4px solid ${color}`, padding: "16px 20px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px" }}>
                   <div style={{ flex: 1 }}>
@@ -285,7 +286,7 @@ export default async function SeriesPage() {
                   })()}
                 </div>
               </div>
-            </Link>
+            </SeriesCard>
           );
         })}
         {series.length === 0 && (
