@@ -155,6 +155,7 @@ export default function SeriesSlideOver({ seriesId, onClose, onUpdated }: Props)
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleteStep, setDeleteStep] = useState(0); // 0=idle, 1=first click, 2=confirmed
 
   const loadData = useCallback(() => {
     setLoading(true);
@@ -411,6 +412,58 @@ export default function SeriesSlideOver({ seriesId, onClose, onUpdated }: Props)
                   style={{ fontSize: "13px", lineHeight: 1.5 }}
                 />
               </div>
+            </div>
+
+            {/* Delete Series */}
+            <div style={{ background: "var(--bg)", borderRadius: "10px", border: `1px solid ${deleteStep > 0 ? "#f8514966" : "var(--border)"}`, padding: "16px", marginBottom: "16px" }}>
+              {deleteStep === 0 && (
+                <button
+                  onClick={() => setDeleteStep(1)}
+                  style={{
+                    background: "none", border: "1px solid #f8514944", borderRadius: "8px",
+                    color: "#f85149", fontSize: "13px", padding: "8px 16px", cursor: "pointer",
+                    width: "100%",
+                  }}
+                >
+                  🗑 Delete Series
+                </button>
+              )}
+              {deleteStep === 1 && (
+                <div>
+                  <div style={{ fontSize: "13px", color: "#f85149", fontWeight: 600, marginBottom: "8px" }}>
+                    ⚠️ This will permanently delete "{data.title}" and all {data.episodes?.length || 0} episode{(data.episodes?.length || 0) !== 1 ? "s" : ""} underneath it.
+                  </div>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <button
+                      onClick={async () => {
+                        setDeleteStep(2);
+                        await fetch(`/api/production/series/${seriesId}`, { method: "DELETE" });
+                        onClose();
+                        onUpdated?.();
+                        window.location.reload();
+                      }}
+                      style={{
+                        background: "#f85149", color: "#fff", border: "none", borderRadius: "8px",
+                        fontSize: "13px", fontWeight: 600, padding: "8px 16px", cursor: "pointer", flex: 1,
+                      }}
+                    >
+                      Yes, delete everything
+                    </button>
+                    <button
+                      onClick={() => setDeleteStep(0)}
+                      style={{
+                        background: "none", border: "1px solid var(--border)", borderRadius: "8px",
+                        color: "var(--text-dim)", fontSize: "13px", padding: "8px 16px", cursor: "pointer",
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+              {deleteStep === 2 && (
+                <div style={{ fontSize: "13px", color: "var(--text-dim)", textAlign: "center" }}>Deleting...</div>
+              )}
             </div>
 
             {/* All editing is now inline — no need for full editor */}

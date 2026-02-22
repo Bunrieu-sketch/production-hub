@@ -20,3 +20,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   ).run(data.title, data.location, data.status, data.target_shoot_start, data.target_shoot_end, data.target_publish_date || null, data.editor || null, data.notes, data.budget_target, new Date().toISOString(), id);
   return NextResponse.json({ id: Number(id) });
 }
+
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const db = getDb();
+  const series = db.prepare("SELECT * FROM series WHERE id = ?").get(id);
+  if (!series) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  // CASCADE handles episodes, episode_phases, milestones, travel
+  db.prepare("DELETE FROM series WHERE id = ?").run(id);
+  return NextResponse.json({ ok: true });
+}
