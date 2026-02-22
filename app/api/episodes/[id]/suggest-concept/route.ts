@@ -41,27 +41,28 @@ ${context ? context + '\n' : ''}
 Generate a vivid, creative thumbnail concept that exaggerates and adds intrigue to this episode. Make it attention-grabbing and visually shocking.`;
 
   try {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) throw new Error('No ANTHROPIC_API_KEY');
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) throw new Error('No OPENAI_API_KEY');
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6-20250514',
+        model: 'gpt-4o',
         max_tokens: 300,
-        temperature: 1,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userPrompt }],
+        temperature: 1.2,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
       }),
     });
 
     const data = await res.json();
-    const concept = data?.content?.[0]?.text?.trim();
+    const concept = data?.choices?.[0]?.message?.content?.trim();
 
     if (concept) {
       return NextResponse.json({ concept: concept + SUFFIX_RULES });
