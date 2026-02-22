@@ -225,7 +225,7 @@ export default function EditEpisodeModal({ episodeId, onClose, onSaved }: Props)
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" style={{ maxWidth: 900 }} onClick={e => e.stopPropagation()}>
+      <div className="modal" style={{ maxWidth: 900, maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
           <div style={{ flex: 1 }}>
             <input
@@ -337,7 +337,28 @@ export default function EditEpisodeModal({ episodeId, onClose, onSaved }: Props)
                         }}
                       >
                         {url ? (
-                          <img src={url} alt={`Generated thumbnail ${slot + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                            <img src={url} alt={`Generated thumbnail ${slot + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setThumbnailPreviews(prev => {
+                                  const next = [...prev];
+                                  next[slot] = '';
+                                  return next;
+                                });
+                                if (form.thumbnail_url === url) set('thumbnail_url', '');
+                              }}
+                              style={{
+                                position: 'absolute', top: 4, right: 4,
+                                width: 22, height: 22, borderRadius: '50%',
+                                background: 'rgba(0,0,0,0.7)', border: 'none',
+                                color: '#fff', fontSize: 12, cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              }}
+                              title="Remove"
+                            >✕</button>
+                          </div>
                         ) : (
                           'No preview'
                         )}
