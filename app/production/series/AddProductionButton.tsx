@@ -1,9 +1,11 @@
 "use client";
 import { useState } from "react";
 import QuickAddModal from "@/components/production/QuickAddModal";
+import SeriesSlideOver from "@/components/production/SeriesSlideOver";
 
 export default function AddProductionButton() {
   const [open, setOpen] = useState(false);
+  const [slideOverId, setSlideOverId] = useState<number | null>(null);
 
   return (
     <>
@@ -14,7 +16,18 @@ export default function AddProductionButton() {
       >
         + Add Production
       </button>
-      {open && <QuickAddModal onClose={() => setOpen(false)} />}
+      {open && (
+        <QuickAddModal
+          onClose={() => setOpen(false)}
+          onCreated={(id) => setSlideOverId(id)}
+        />
+      )}
+      {slideOverId && (
+        <SeriesSlideOver
+          seriesId={slideOverId}
+          onClose={() => { setSlideOverId(null); window.location.reload(); }}
+        />
+      )}
     </>
   );
 }
