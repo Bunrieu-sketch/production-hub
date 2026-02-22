@@ -4,9 +4,10 @@ import { useState } from "react";
 
 interface Props {
   onClose: () => void;
+  onCreated?: (id: number) => void;
 }
 
-export default function QuickAddModal({ onClose }: Props) {
+export default function QuickAddModal({ onClose, onCreated }: Props) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [episodeCount, setEpisodeCount] = useState(5);
@@ -60,9 +61,11 @@ export default function QuickAddModal({ onClose }: Props) {
 
     if (res.ok) {
       const p = await res.json();
-      router.push(`/production/series/${p.id}`);
       router.refresh();
       onClose();
+      if (onCreated) {
+        onCreated(p.id);
+      }
     }
     setSaving(false);
   }
