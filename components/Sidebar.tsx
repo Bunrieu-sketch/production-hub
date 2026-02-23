@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutGrid, Kanban, FileText, Search, Palette,
   GanttChart, Calendar, Clapperboard, Video, Route,
-  HandCoins, Users, ChevronDown, ChevronRight,
+  HandCoins, Users, UserPlus, ChevronDown, ChevronRight,
   ExternalLink, ShieldCheck, Gavel, FolderOpen, BarChart3,
 } from 'lucide-react';
 
@@ -43,6 +43,7 @@ export function Sidebar() {
       items: [
         { href: '/pipeline/sponsors', icon: <HandCoins size={16} />, label: 'Sponsors' },
         { href: '/pipeline/people', icon: <Users size={16} />, label: 'People' },
+        { href: '/hiring', icon: <UserPlus size={16} />, label: 'Hiring' },
       ],
     },
     {

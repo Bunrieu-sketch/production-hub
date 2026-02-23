@@ -265,11 +265,61 @@ function initDb() {
 
     CREATE INDEX IF NOT EXISTS idx_youtube_analytics_fetched_at ON youtube_analytics(fetched_at);
     CREATE INDEX IF NOT EXISTS idx_youtube_analytics_channel_id ON youtube_analytics(channel_id);
+
+    -- ── Hiring ───────────────────────────────────────────────────────────
+    CREATE TABLE IF NOT EXISTS job_positions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      role_type TEXT DEFAULT 'producer' CHECK(role_type IN ('producer', 'editor', 'fixer', 'camera', 'other')),
+      status TEXT DEFAULT 'active' CHECK(status IN ('active', 'paused', 'filled', 'cancelled')),
+      description TEXT DEFAULT '',
+      requirements TEXT DEFAULT '',
+      rate_range TEXT DEFAULT '',
+      location_preference TEXT DEFAULT '',
+      job_board_urls TEXT DEFAULT '',
+      trial_task_doc_url TEXT DEFAULT '',
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS applicants (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      position_id INTEGER NOT NULL REFERENCES job_positions(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      email TEXT DEFAULT '',
+      phone TEXT DEFAULT '',
+      source TEXT DEFAULT '' CHECK(source IN ('onlinejobs_ph', 'vietnamworks', 'referral', 'direct', 'other', '')),
+      portfolio_url TEXT DEFAULT '',
+      resume_url TEXT DEFAULT '',
+      stage TEXT DEFAULT 'applied' CHECK(stage IN ('applied', 'contacted', 'trial_sent', 'evaluation', 'interview', 'hired', 'rejected')),
+      screening_score INTEGER DEFAULT 0,
+      screening_notes TEXT DEFAULT '',
+      interview_date TEXT,
+      interview_notes TEXT DEFAULT '',
+      trial_task_sent_at TEXT,
+      trial_task_received_at TEXT,
+      trial_task_score INTEGER DEFAULT 0,
+      trial_task_notes TEXT DEFAULT '',
+      probation_start TEXT,
+      probation_30_day TEXT,
+      probation_60_day TEXT,
+      probation_90_day TEXT,
+      probation_notes TEXT DEFAULT '',
+      overall_rating INTEGER DEFAULT 0,
+      communication_rating INTEGER DEFAULT 0,
+      attitude_rating INTEGER DEFAULT 0,
+      motivation_rating INTEGER DEFAULT 0,
+      rejection_reason TEXT DEFAULT '',
+      notes TEXT DEFAULT '',
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
   `);
 
   migrateEpisodesSchema();
   migrateSeriesSchema();
   migrateSponsorsSchema();
+  migrateHiringStages();
 }
 
 function migrateEpisodesSchema() {
@@ -462,6 +512,78 @@ function migrateSponsorsSchema() {
   }
 }
 
+function migrateHiringStages() {
+  if (!db) return;
+
+  // Check if we still have the old CHECK constraint (contains 'screening')
+  const tableDef = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='applicants'").get() as { sql?: string } | undefined;
+  if (!tableDef?.sql || !tableDef.sql.includes("'screening'")) return;
+
+  // Recreate table with new CHECK constraint, mapping old stages during INSERT
+  db.exec('BEGIN');
+  try {
+    db.exec(`
+      CREATE TABLE applicants_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        position_id INTEGER NOT NULL REFERENCES job_positions(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        email TEXT DEFAULT '',
+        phone TEXT DEFAULT '',
+        source TEXT DEFAULT '' CHECK(source IN ('onlinejobs_ph', 'vietnamworks', 'referral', 'direct', 'other', '')),
+        portfolio_url TEXT DEFAULT '',
+        resume_url TEXT DEFAULT '',
+        stage TEXT DEFAULT 'applied' CHECK(stage IN ('applied', 'contacted', 'trial_sent', 'evaluation', 'interview', 'hired', 'rejected')),
+        screening_score INTEGER DEFAULT 0,
+        screening_notes TEXT DEFAULT '',
+        interview_date TEXT,
+        interview_notes TEXT DEFAULT '',
+        trial_task_sent_at TEXT,
+        trial_task_received_at TEXT,
+        trial_task_score INTEGER DEFAULT 0,
+        trial_task_notes TEXT DEFAULT '',
+        probation_start TEXT,
+        probation_30_day TEXT,
+        probation_60_day TEXT,
+        probation_90_day TEXT,
+        probation_notes TEXT DEFAULT '',
+        overall_rating INTEGER DEFAULT 0,
+        communication_rating INTEGER DEFAULT 0,
+        attitude_rating INTEGER DEFAULT 0,
+        motivation_rating INTEGER DEFAULT 0,
+        rejection_reason TEXT DEFAULT '',
+        notes TEXT DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
+    `);
+
+    // Insert with stage mapping applied inline
+    db.exec(`
+      INSERT INTO applicants_new
+      SELECT id, position_id, name, email, phone, source, portfolio_url, resume_url,
+        CASE stage
+          WHEN 'screening' THEN 'contacted'
+          WHEN 'trial_task' THEN 'trial_sent'
+          WHEN 'probation' THEN 'evaluation'
+          ELSE stage
+        END,
+        screening_score, screening_notes, interview_date, interview_notes,
+        trial_task_sent_at, trial_task_received_at, trial_task_score, trial_task_notes,
+        probation_start, probation_30_day, probation_60_day, probation_90_day, probation_notes,
+        overall_rating, communication_rating, attitude_rating, motivation_rating,
+        rejection_reason, notes, created_at, updated_at
+      FROM applicants;
+    `);
+
+    db.exec('DROP TABLE applicants');
+    db.exec('ALTER TABLE applicants_new RENAME TO applicants');
+    db.exec('COMMIT');
+  } catch (err) {
+    db.exec('ROLLBACK');
+    throw err;
+  }
+}
+
 // ── Migration helpers ──────────────────────────────────────────────────────
 
 export function generateMilestones(seriesId: number, shootStart: string) {
@@ -587,6 +709,12 @@ export function getStats() {
     total,
     completion: total ? Math.round(done / total * 100) : 0,
   };
+}
+
+export function logActivity(entityType: string, entityId: number, action: string, details = '') {
+  const database = getDb();
+  database.prepare('INSERT INTO activity_log (action, task_id, details) VALUES (?, ?, ?)')
+    .run(action, entityId, `[${entityType}] ${details}`);
 }
 
 export function getActivity(): Activity[] {
