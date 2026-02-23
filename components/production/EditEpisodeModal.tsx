@@ -226,7 +226,7 @@ export default function EditEpisodeModal({ episodeId, onClose, onSaved }: Props)
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" style={{ maxWidth: 900, maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+      <div className="modal" style={{ maxWidth: 1100, width: '95vw', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
           <div style={{ flex: 1 }}>
             <input
@@ -259,7 +259,7 @@ export default function EditEpisodeModal({ episodeId, onClose, onSaved }: Props)
           <>
             <div style={{ display: 'flex', gap: 20 }}>
               {/* LEFT COLUMN — Details */}
-              <div style={{ flex: '1 1 50%', minWidth: 0 }}>
+              <div style={{ flex: '1 1 55%', minWidth: 0 }}>
                 <div className="grid-2">
                   <div className="form-group">
                     <label className="form-label">Stage</label>
@@ -337,7 +337,7 @@ export default function EditEpisodeModal({ episodeId, onClose, onSaved }: Props)
               </div>
 
               {/* RIGHT COLUMN — Thumbnails */}
-              <div style={{ flex: '1 1 50%', minWidth: 0 }}>
+              <div style={{ flex: '1 1 45%', minWidth: 0 }}>
                 <div className="section-label">Thumbnail</div>
                 <div className="form-group">
                   <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
@@ -370,12 +370,12 @@ export default function EditEpisodeModal({ episodeId, onClose, onSaved }: Props)
                     )}
                   </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                   {previewSlots.map((slot) => {
                     const url = thumbnailPreviews[slot];
                     const selected = url && form.thumbnail_url === url;
                     return (
-                      <div key={slot} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div key={slot} style={{ flex: '1 1 0', minWidth: 0 }}>
                         <div
                           style={{
                             width: '100%',
