@@ -70,7 +70,10 @@ export default function EpisodesPage() {
 
   const load = () => {
     const url = seriesFilter ? `/api/episodes?series_id=${seriesFilter}` : '/api/episodes';
-    fetch(url).then(r => r.json()).then(setEpisodes);
+    fetch(url).then(r => r.json()).then((data) => {
+      setEpisodes(data);
+      setFailedThumbs(new Set()); // reset failed thumbs on reload
+    });
   };
 
   useEffect(() => {
