@@ -519,17 +519,7 @@ function migrateHiringStages() {
   const tableDef = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='applicants'").get() as { sql?: string } | undefined;
   if (!tableDef?.sql || !tableDef.sql.includes("'screening'")) return;
 
-  // First migrate data in the old table, then recreate with new constraint
-  const stageMap: Record<string, string> = {
-    screening: 'contacted',
-    trial_task: 'trial_sent',
-    probation: 'evaluation',
-  };
-  for (const [oldStage, newStage] of Object.entries(stageMap)) {
-    db.prepare('UPDATE applicants SET stage = ? WHERE stage = ?').run(newStage, oldStage);
-  }
-
-  // Recreate the table with the new CHECK constraint
+  // Recreate table with new CHECK constraint, mapping old stages during INSERT
   db.exec('BEGIN');
   try {
     db.exec(`
@@ -567,8 +557,22 @@ function migrateHiringStages() {
       );
     `);
 
+    // Insert with stage mapping applied inline
     db.exec(`
-      INSERT INTO applicants_new SELECT * FROM applicants;
+      INSERT INTO applicants_new
+      SELECT id, position_id, name, email, phone, source, portfolio_url, resume_url,
+        CASE stage
+          WHEN 'screening' THEN 'contacted'
+          WHEN 'trial_task' THEN 'trial_sent'
+          WHEN 'probation' THEN 'evaluation'
+          ELSE stage
+        END,
+        screening_score, screening_notes, interview_date, interview_notes,
+        trial_task_sent_at, trial_task_received_at, trial_task_score, trial_task_notes,
+        probation_start, probation_30_day, probation_60_day, probation_90_day, probation_notes,
+        overall_rating, communication_rating, attitude_rating, motivation_rating,
+        rejection_reason, notes, created_at, updated_at
+      FROM applicants;
     `);
 
     db.exec('DROP TABLE applicants');
