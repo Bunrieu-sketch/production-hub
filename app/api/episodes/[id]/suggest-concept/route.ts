@@ -23,63 +23,62 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     episode.series_title && `Series: ${episode.series_title}`,
   ].filter(Boolean).join('\n');
 
-  // Use Sonnet to creatively generate a concept
-  const systemPrompt = `You are a YouTube thumbnail designer for a travel/food channel with 500K+ subscribers. The host explores extreme, otherworldly food and culture.
+  const systemPrompt = `You are a world-class YouTube thumbnail strategist. Your process:
 
-Your job: write ONE image generation prompt for a YouTube thumbnail that would get a 10%+ CTR.
+STEP 1 — CURIOSITY ANALYSIS (think silently, don't output this):
+- What is the CORE EMOTION this video triggers? (fear, awe, disgust, wonder, disbelief)
+- What would make a viewer stop scrolling and think "NO WAY, is that real?"
+- What single image would create an information gap — showing enough to intrigue but not enough to satisfy?
 
-Think about what makes top YouTube thumbnails work:
-- ONE clear focal point (a shocking food, dangerous animal, extreme situation)
-- Exaggerated scale — make things look bigger, more intense, more extreme than reality
-- Bright, saturated colors that pop on a phone screen
-- Simple composition — not cluttered, one clear subject
-- The "WOW factor" — what makes someone think "no way, I have to click"
+STEP 2 — EXTREME VISUAL CONCEPT:
+Based on your analysis, describe ONE hyper-dramatic, exaggerated image that:
+- Captures the most EXTREME possible version of the subject
+- Uses scale distortion — make things look impossibly big, intense, or dangerous
+- Has a single unmistakable focal point that reads in 0.5 seconds on a phone
+- Evokes a visceral gut reaction (jaw drop, cringe, wonder)
+- Feels like a real photograph taken at the perfect moment, but cranked to 11
 
-Rules:
-- Describe a SINGLE striking image, not a complex scene
-- Keep it simple — one subject, one background, one mood
-- Think photorealistic, like an actual photograph but more dramatic
-- Specify camera angle and lighting (low angle + dramatic lighting works great)
-- Each time, come up with a COMPLETELY DIFFERENT creative interpretation
-- Output ONLY the image prompt, nothing else`;
+The channel is a travel/food/culture channel exploring the most extreme, otherworldly experiences on Earth. Think: bizarre foods, dangerous traditions, isolated tribes, places that don't look real.
 
-  const userPrompt = `Episode title: "${episode.title}"
+CRITICAL: Every suggestion must be WILDLY DIFFERENT from the last. Never default to "person holding food" or "person standing in front of landmark." Think cinematically — unusual angles, dramatic scale, unexpected framing.
+
+Output ONLY the image generation prompt. No preamble, no explanation.`;
+
+  const userPrompt = `Episode: "${episode.title}"
 ${context ? context + '\n' : ''}
-Generate a vivid, creative thumbnail concept that exaggerates and adds intrigue to this episode. Make it attention-grabbing and visually shocking.`;
+Generate a thumbnail concept that would make someone's thumb STOP mid-scroll. What's the most extreme, curiosity-inducing single image for this episode?`;
 
   try {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) throw new Error('No OPENAI_API_KEY');
-    const apiUrl = 'https://api.openai.com/v1/chat/completions';
-    const model = 'gpt-4o-mini';
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error('No GEMINI_API_KEY');
 
-    const res = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: 300,
-        temperature: 1,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-      }),
-    });
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [
+            { role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] },
+          ],
+          generationConfig: {
+            temperature: 1.2,
+            maxOutputTokens: 400,
+          },
+        }),
+      }
+    );
 
     const data = await res.json();
-    if (data.error) console.error('AI API error:', JSON.stringify(data.error));
-    const concept = data?.choices?.[0]?.message?.content?.trim();
+    const concept = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
     if (concept) {
       return NextResponse.json({ concept: concept + SUFFIX_RULES });
     }
+
+    console.error('Gemini response issue:', JSON.stringify(data).slice(0, 500));
   } catch (e: unknown) {
-    console.error('AI concept generation failed:', e);
-    console.error('Used model:', moonKey ? 'kimi' : 'openai', 'key present:', !!apiKey);
+    console.error('Gemini concept generation failed:', e);
   }
 
   // Fallback: simple template if API fails
