@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 
-const SUFFIX_RULES = `\n\nTechnical rules for the image prompt (append these exactly):\n- Photorealistic photography style with rich, saturated colors and ultra-sharp focus\n- If any text appears in the image, maximum 1-3 words that add intrigue — never repeat words from the episode title\n- Clear negative space on one side for text overlay\n- Landscape 16:9 format`;
+const SUFFIX_RULES = `\n\nTechnical rules for the image prompt (append these exactly):\n- This is a YOUTUBE THUMBNAIL — it must read instantly at small sizes on a phone screen\n- Include the host/YouTuber (a young male traveler) as the central human element — reference photos will be provided separately for likeness\n- Photorealistic photography style with rich, saturated colors and ultra-sharp focus\n- If any text appears in the image, maximum 1-3 words that add intrigue — never repeat words from the episode title\n- Clear negative space on one side for text overlay\n- Landscape 16:9 format`;
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

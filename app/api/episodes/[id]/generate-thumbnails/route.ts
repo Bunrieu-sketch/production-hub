@@ -92,7 +92,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     await Promise.all(commands.map((cmd) => exec(cmd, { maxBuffer: 1024 * 1024 * 20 })));
 
-    const urls = variants.map((_, index) => `/thumbnails/ep-${id}/thumb-${index + 1}.png`);
+    const cacheBust = Date.now();
+    const urls = variants.map((_, index) => `/thumbnails/ep-${id}/thumb-${index + 1}.png?t=${cacheBust}`);
     return NextResponse.json({ urls });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Thumbnail generation failed';
