@@ -294,8 +294,7 @@ export default function HiringPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <h1 style={{ fontSize: 22, fontWeight: 600 }}>Hiring</h1>
-          <a href="https://drive.google.com/file/d/1McTRZDLy4ofrSx7-qR1tajV-z2aPyoXI/view"
-             target="_blank" rel="noopener"
+          <a href="/docs/hiring-flow"
              style={{ fontSize: 11, color: 'var(--text-dim)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
             📋 Content Ops Manager Flow
           </a>
