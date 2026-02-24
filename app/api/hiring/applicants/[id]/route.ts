@@ -5,7 +5,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
   const db = getDb();
   const applicant = db.prepare(`
-    SELECT a.*, jp.title as position_title
+    SELECT a.*, jp.title as position_title, jp.role_type
     FROM applicants a
     LEFT JOIN job_positions jp ON a.position_id = jp.id
     WHERE a.id = ?
@@ -24,7 +24,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const values = fields.map(f => body[f]);
   db.prepare(`UPDATE applicants SET ${setClauses}, updated_at = datetime('now') WHERE id = ?`).run(...values, id);
   const updated = db.prepare(`
-    SELECT a.*, jp.title as position_title
+    SELECT a.*, jp.title as position_title, jp.role_type
     FROM applicants a
     LEFT JOIN job_positions jp ON a.position_id = jp.id
     WHERE a.id = ?

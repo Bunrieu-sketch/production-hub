@@ -7,6 +7,7 @@ interface Applicant {
   id: number;
   position_id: number;
   position_title: string;
+  role_type?: string;
   name: string;
   email: string;
   phone: string;
@@ -31,6 +32,9 @@ interface Applicant {
   communication_rating: number;
   attitude_rating: number;
   motivation_rating: number;
+  desired_salary: string;
+  experience: string;
+  portfolio_score: number;
   rejection_reason: string;
   notes: string;
   created_at: string;
@@ -94,9 +98,13 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
   useEffect(() => {
     fetch(`/api/hiring/applicants/${applicantId}`).then(r => r.json()).then(data => {
       setApp(data);
-      // Auto-open Trial tab when in evaluation stage
+      // Reset tab based on role type and stage
       if (data?.stage === 'evaluation') {
         setTab('trial');
+      } else if (data?.role_type === 'editor') {
+        setTab('portfolio');
+      } else {
+        setTab('info');
       }
     });
   }, [applicantId]);
@@ -109,19 +117,49 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
 
   const update = (key: string, value: string | number) => {
     if (!app) return;
+    console.log(`[DEBUG] Updating ${key} from ${(app as any)[key]} to ${value}`);
     setApp({ ...app, [key]: value });
+  };
+
+  const getScoreValue = (key: keyof Applicant): number => {
+    if (!app) return 0;
+    const val = app[key];
+    return typeof val === 'string' ? parseInt(val, 10) || 0 : (val as number) || 0;
   };
 
   const save = async () => {
     if (!app) return;
     setSaving(true);
+    // Ensure numeric fields are numbers
+    const payload = {
+      ...app,
+      trial_task_score: Number(app.trial_task_score) || 0,
+      portfolio_score: Number(app.portfolio_score) || 0,
+      screening_score: Number(app.screening_score) || 0,
+      overall_rating: Number(app.overall_rating) || 0,
+      communication_rating: Number(app.communication_rating) || 0,
+      attitude_rating: Number(app.attitude_rating) || 0,
+      motivation_rating: Number(app.motivation_rating) || 0,
+    };
+    console.log('[DEBUG] Saving applicant:', JSON.stringify(payload, null, 2));
     try {
-      await fetch(`/api/hiring/applicants/${applicantId}`, {
+      const res = await fetch(`/api/hiring/applicants/${applicantId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(app),
+        body: JSON.stringify(payload),
       });
+      if (!res.ok) {
+        const error = await res.text();
+        console.error('[DEBUG] Save failed:', error);
+        throw new Error(`Save failed: ${error}`);
+      }
+      const result = await res.json();
+      console.log('[DEBUG] Save response:', result);
       onSaved();
+      onClose();
+    } catch (err) {
+      console.error('[DEBUG] Save error:', err);
+      alert('Failed to save. Check console for details.');
     } finally {
       setSaving(false);
     }
@@ -142,6 +180,7 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
     </div>
   );
 
+  const isEditor = app?.role_type === 'editor';
   const tabs = ['info', 'screening', 'interview', 'trial', 'probation', 'notes'];
 
   return (
@@ -199,19 +238,14 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
               </div>
               <div className="grid-2">
                 <div className="form-group">
-                  <label className="form-label">Phone</label>
-                  <input value={app.phone} onChange={e => update('phone', e.target.value)} />
+                  <label className="form-label">Desired Salary</label>
+                  <input value={app.desired_salary} onChange={e => update('desired_salary', e.target.value)} placeholder="e.g. $500/mo" />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Source</label>
-                  <select value={app.source} onChange={e => update('source', e.target.value)}>
-                    <option value="">-- Select --</option>
-                    <option value="onlinejobs_ph">OnlineJobs.ph</option>
-                    <option value="vietnamworks">VietnamWorks</option>
-                    <option value="referral">Referral</option>
-                    <option value="direct">Direct</option>
-                    <option value="other">Other</option>
-                  </select>
+                  <div style={{ fontSize: 13, padding: '6px 0', color: 'var(--text-dim)' }}>
+                    {SOURCE_LABELS[app.source] || app.source || '--'}
+                  </div>
                 </div>
               </div>
               <div className="grid-2">
@@ -239,8 +273,104 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
                 </div>
               </div>
 
+              {/* Experience */}
+              {app.experience && (
+                <div style={{ marginTop: 8, padding: 12, background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', marginBottom: 8 }}>EXPERIENCE</div>
+                  <div style={{ fontSize: 12, lineHeight: 1.7, color: 'var(--text)', whiteSpace: 'pre-wrap' }}>{app.experience}</div>
+                </div>
+              )}
+
+              {/* Timeline */}
+              <div style={{ marginTop: 12, padding: 12, background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', marginBottom: 10 }}>TIMELINE</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <TimelineRow label="Applied" date={app.created_at} />
+                  {app.interview_date && <TimelineRow label="Interview" date={app.interview_date} />}
+                  {app.trial_task_sent_at && <TimelineRow label="Trial Sent" date={app.trial_task_sent_at} />}
+                  {app.trial_task_received_at && <TimelineRow label="Trial Received" date={app.trial_task_received_at} />}
+                  {app.probation_start && <TimelineRow label="Probation Start" date={app.probation_start} />}
+                  {app.probation_30_day && <TimelineRow label="30-Day Review" date={app.probation_30_day} />}
+                  {app.probation_60_day && <TimelineRow label="60-Day Review" date={app.probation_60_day} />}
+                  {app.probation_90_day && <TimelineRow label="90-Day Review" date={app.probation_90_day} />}
+                </div>
+              </div>
+            </>
+          )}
+
+          {tab === 'screening' && (
+            <>
+              {isEditor ? (
+                <>
+                  {/* Portfolio links display */}
+                  {app.portfolio_url && (
+                    <div style={{ marginBottom: 16, padding: 14, background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', marginBottom: 8 }}>PORTFOLIO LINKS</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {app.portfolio_url.split('\n').filter(Boolean).map((link, i) => (
+                          <a key={i} href={link} target="_blank" rel="noopener noreferrer"
+                            style={{ color: 'var(--blue)', fontSize: 13, wordBreak: 'break-all', display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <ExternalLink size={13} style={{ flexShrink: 0 }} />
+                            {link.includes('docs.google.com') ? 'Google Doc' :
+                             link.includes('drive.google.com') ? 'Google Drive' :
+                             link.includes('youtube.com') || link.includes('youtu.be') ? 'YouTube' :
+                             link.includes('vimeo.com') ? 'Vimeo' :
+                             link.includes('canva.com') ? 'Canva' :
+                             link.includes('behance.net') ? 'Behance' :
+                             link}
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Portfolio Score (1-10) */}
+                  <div className="form-group">
+                    <label className="form-label">Portfolio Score (1-10)</label>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      {[1,2,3,4,5,6,7,8,9,10].map(n => (
+                        <button key={n} type="button" onClick={() => update('portfolio_score', n === getScoreValue('portfolio_score') ? 0 : n)}
+                          style={{
+                            width: 32, height: 32, borderRadius: 6, border: '1px solid var(--border)',
+                            background: n <= getScoreValue('portfolio_score') ? 'var(--accent)' : 'var(--bg)',
+                            color: n <= getScoreValue('portfolio_score') ? 'white' : 'var(--text-dim)',
+                            fontWeight: 600, fontSize: 12, cursor: 'pointer',
+                            transition: 'all 0.15s',
+                          }}>{n}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Portfolio Notes */}
+                  <div className="form-group">
+                    <label className="form-label">Portfolio Notes</label>
+                    <textarea value={app.screening_notes} onChange={e => update('screening_notes', e.target.value)} rows={6} placeholder="Notes on their portfolio work..." />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="form-group">
+                    <label className="form-label">Screening Score (0-100)</label>
+                    <input type="number" min={0} max={100} value={app.screening_score} onChange={e => update('screening_score', Number(e.target.value))} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Screening Notes</label>
+                    <textarea value={app.screening_notes} onChange={e => update('screening_notes', e.target.value)} rows={6} placeholder="Notes from initial screening..." />
+                  </div>
+                </>
+              )}
+            </>
+          )}
+
+          {tab === 'interview' && (
+            <>
+              <div className="form-group">
+                <label className="form-label">Interview Date</label>
+                <input type="date" value={app.interview_date || ''} onChange={e => update('interview_date', e.target.value)} />
+              </div>
+
               {/* Ratings */}
-              <div style={{ marginTop: 8, padding: 12, background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
+              <div style={{ marginTop: 4, marginBottom: 12, padding: 12, background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', marginBottom: 10 }}>RATINGS</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -262,42 +392,6 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
                 </div>
               </div>
 
-              {/* Timeline */}
-              <div style={{ marginTop: 12, padding: 12, background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', marginBottom: 10 }}>TIMELINE</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <TimelineRow label="Applied" date={app.created_at} />
-                  {app.interview_date && <TimelineRow label="Interview" date={app.interview_date} />}
-                  {app.trial_task_sent_at && <TimelineRow label="Trial Sent" date={app.trial_task_sent_at} />}
-                  {app.trial_task_received_at && <TimelineRow label="Trial Received" date={app.trial_task_received_at} />}
-                  {app.probation_start && <TimelineRow label="Probation Start" date={app.probation_start} />}
-                  {app.probation_30_day && <TimelineRow label="30-Day Review" date={app.probation_30_day} />}
-                  {app.probation_60_day && <TimelineRow label="60-Day Review" date={app.probation_60_day} />}
-                  {app.probation_90_day && <TimelineRow label="90-Day Review" date={app.probation_90_day} />}
-                </div>
-              </div>
-            </>
-          )}
-
-          {tab === 'screening' && (
-            <>
-              <div className="form-group">
-                <label className="form-label">Screening Score (0-100)</label>
-                <input type="number" min={0} max={100} value={app.screening_score} onChange={e => update('screening_score', Number(e.target.value))} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Screening Notes</label>
-                <textarea value={app.screening_notes} onChange={e => update('screening_notes', e.target.value)} rows={6} placeholder="Notes from initial screening..." />
-              </div>
-            </>
-          )}
-
-          {tab === 'interview' && (
-            <>
-              <div className="form-group">
-                <label className="form-label">Interview Date</label>
-                <input type="date" value={app.interview_date || ''} onChange={e => update('interview_date', e.target.value)} />
-              </div>
               <div className="form-group">
                 <label className="form-label">Interview Notes</label>
                 <textarea value={app.interview_notes} onChange={e => update('interview_notes', e.target.value)} rows={6} placeholder="Notes from interview..." />
@@ -311,7 +405,7 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
               <div style={{ marginBottom: 16, padding: 14, background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', marginBottom: 8 }}>SUBMISSION</div>
                 {app.trial_task_notes || app.notes ? (
-                  <div style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--text)', whiteSpace: 'pre-wrap' }}>
+                  <div style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--text)', whiteSpace: 'pre-wrap', overflow: 'hidden' }}>
                     {(() => {
                       // Extract links from notes
                       const allNotes = [app.trial_task_notes, app.notes].filter(Boolean).join('\n');
@@ -351,11 +445,11 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
                 <label className="form-label">Your Score (1-10)</label>
                 <div style={{ display: 'flex', gap: 4 }}>
                   {[1,2,3,4,5,6,7,8,9,10].map(n => (
-                    <button key={n} onClick={() => update('trial_task_score', n === app.trial_task_score ? 0 : n)}
+                    <button key={n} onClick={() => update('trial_task_score', n === getScoreValue('trial_task_score') ? 0 : n)}
                       style={{
                         width: 32, height: 32, borderRadius: 6, border: '1px solid var(--border)',
-                        background: n <= app.trial_task_score ? 'var(--accent)' : 'var(--bg)',
-                        color: n <= app.trial_task_score ? 'white' : 'var(--text-dim)',
+                        background: n <= getScoreValue('trial_task_score') ? 'var(--accent)' : 'var(--bg)',
+                        color: n <= getScoreValue('trial_task_score') ? 'white' : 'var(--text-dim)',
                         fontWeight: 600, fontSize: 12, cursor: 'pointer',
                         transition: 'all 0.15s',
                       }}>{n}</button>

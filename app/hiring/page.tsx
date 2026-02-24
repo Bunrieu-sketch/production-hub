@@ -25,6 +25,7 @@ interface Applicant {
   id: number;
   position_id: number;
   position_title: string;
+  role_type?: string;
   name: string;
   email: string;
   source: string;
@@ -35,6 +36,7 @@ interface Applicant {
   motivation_rating: number;
   screening_score: number;
   trial_task_score: number;
+  portfolio_score: number;
   created_at: string;
   updated_at: string;
 }
@@ -295,17 +297,31 @@ export default function HiringPage() {
                   </span>
                 </div>
 
-                {/* Trial score badge */}
-                {app.trial_task_score > 0 && (
-                  <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{
-                      fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 6,
-                      background: app.trial_task_score >= 7 ? '#3fb95025' : app.trial_task_score >= 4 ? '#d2992225' : '#f8514925',
-                      color: app.trial_task_score >= 7 ? '#3fb950' : app.trial_task_score >= 4 ? '#d29922' : '#f85149',
-                    }}>
-                      {app.trial_task_score}/10
-                    </span>
-                  </div>
+                {/* Trial/Portfolio score badge */}
+                {app.role_type === 'editor' ? (
+                  app.portfolio_score > 0 && (
+                    <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{
+                        fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 6,
+                        background: app.portfolio_score >= 7 ? '#3fb95025' : app.portfolio_score >= 4 ? '#d2992225' : '#f8514925',
+                        color: app.portfolio_score >= 7 ? '#3fb950' : app.portfolio_score >= 4 ? '#d29922' : '#f85149',
+                      }}>
+                        Portfolio {app.portfolio_score}/10
+                      </span>
+                    </div>
+                  )
+                ) : (
+                  app.trial_task_score > 0 && (
+                    <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{
+                        fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 6,
+                        background: app.trial_task_score >= 7 ? '#3fb95025' : app.trial_task_score >= 4 ? '#d2992225' : '#f8514925',
+                        color: app.trial_task_score >= 7 ? '#3fb950' : app.trial_task_score >= 4 ? '#d29922' : '#f85149',
+                      }}>
+                        {app.trial_task_score}/10
+                      </span>
+                    </div>
+                  )
                 )}
 
                 {/* Rating dots */}

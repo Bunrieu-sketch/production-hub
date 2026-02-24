@@ -6,9 +6,10 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const positionId = searchParams.get('position_id');
   const stage = searchParams.get('stage');
+  const roleType = searchParams.get('role_type');
 
   let query = `
-    SELECT a.*, jp.title as position_title
+    SELECT a.*, jp.title as position_title, jp.role_type
     FROM applicants a
     LEFT JOIN job_positions jp ON a.position_id = jp.id
     WHERE 1=1
@@ -16,6 +17,7 @@ export async function GET(req: NextRequest) {
   const params: string[] = [];
   if (positionId) { query += ' AND a.position_id = ?'; params.push(positionId); }
   if (stage) { query += ' AND a.stage = ?'; params.push(stage); }
+  if (roleType) { query += ' AND jp.role_type = ?'; params.push(roleType); }
   query += ' ORDER BY a.created_at DESC';
 
   const rows = db.prepare(query).all(...params);
@@ -36,7 +38,7 @@ export async function POST(req: NextRequest) {
   );
 
   const applicant = db.prepare(`
-    SELECT a.*, jp.title as position_title
+    SELECT a.*, jp.title as position_title, jp.role_type
     FROM applicants a
     LEFT JOIN job_positions jp ON a.position_id = jp.id
     WHERE a.id = ?
