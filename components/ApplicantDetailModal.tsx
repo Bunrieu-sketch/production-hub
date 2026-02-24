@@ -92,7 +92,13 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/hiring/applicants/${applicantId}`).then(r => r.json()).then(setApp);
+    fetch(`/api/hiring/applicants/${applicantId}`).then(r => r.json()).then(data => {
+      setApp(data);
+      // Auto-open Trial tab when in evaluation stage
+      if (data?.stage === 'evaluation') {
+        setTab('trial');
+      }
+    });
   }, [applicantId]);
 
   useEffect(() => {
@@ -301,24 +307,71 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
 
           {tab === 'trial' && (
             <>
-              <div className="grid-2">
-                <div className="form-group">
-                  <label className="form-label">Task Sent</label>
-                  <input type="date" value={app.trial_task_sent_at || ''} onChange={e => update('trial_task_sent_at', e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Task Received</label>
-                  <input type="date" value={app.trial_task_received_at || ''} onChange={e => update('trial_task_received_at', e.target.value)} />
-                </div>
+              {/* Submission content first — this is what you want to review */}
+              <div style={{ marginBottom: 16, padding: 14, background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', marginBottom: 8 }}>SUBMISSION</div>
+                {app.trial_task_notes || app.notes ? (
+                  <div style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--text)', whiteSpace: 'pre-wrap' }}>
+                    {(() => {
+                      // Extract links from notes
+                      const allNotes = [app.trial_task_notes, app.notes].filter(Boolean).join('\n');
+                      const urlRegex = /(https?:\/\/[^\s,)]+)/g;
+                      const links = allNotes.match(urlRegex);
+                      return (
+                        <>
+                          {links && links.length > 0 && (
+                            <div style={{ marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                              {links.map((link, i) => (
+                                <a key={i} href={link} target="_blank" rel="noopener noreferrer"
+                                  style={{ color: 'var(--blue)', fontSize: 13, wordBreak: 'break-all', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  <ExternalLink size={13} style={{ flexShrink: 0 }} />
+                                  {link.includes('docs.google.com') ? 'Google Doc' :
+                                   link.includes('drive.google.com') ? 'Google Drive' :
+                                   link.includes('youtube.com') || link.includes('youtu.be') ? 'YouTube' :
+                                   link.includes('vimeo.com') ? 'Vimeo' :
+                                   link}
+                                </a>
+                              ))}
+                            </div>
+                          )}
+                          <div style={{ color: 'var(--text-dim)', fontSize: 12 }}>{allNotes}</div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12, color: 'var(--text-dim)', fontStyle: 'italic' }}>
+                    No submission received yet
+                  </div>
+                )}
               </div>
+
+              {/* Score */}
               <div className="form-group">
-                <label className="form-label">Trial Task Score (0-100)</label>
+                <label className="form-label">Your Score (0-100)</label>
                 <input type="number" min={0} max={100} value={app.trial_task_score} onChange={e => update('trial_task_score', Number(e.target.value))} />
               </div>
+
+              {/* Evaluation notes */}
               <div className="form-group">
-                <label className="form-label">Trial Task Notes</label>
-                <textarea value={app.trial_task_notes} onChange={e => update('trial_task_notes', e.target.value)} rows={5} placeholder="Evaluation of trial task..." />
+                <label className="form-label">Your Evaluation Notes</label>
+                <textarea value={app.trial_task_notes} onChange={e => update('trial_task_notes', e.target.value)} rows={5} placeholder="What did you think of their work?" />
               </div>
+
+              {/* Dates collapsed at bottom */}
+              <details style={{ marginTop: 8 }}>
+                <summary style={{ fontSize: 11, color: 'var(--text-dim)', cursor: 'pointer' }}>Timeline details</summary>
+                <div className="grid-2" style={{ marginTop: 8 }}>
+                  <div className="form-group">
+                    <label className="form-label">Task Sent</label>
+                    <input type="date" value={app.trial_task_sent_at || ''} onChange={e => update('trial_task_sent_at', e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Task Received</label>
+                    <input type="date" value={app.trial_task_received_at || ''} onChange={e => update('trial_task_received_at', e.target.value)} />
+                  </div>
+                </div>
+              </details>
             </>
           )}
 
