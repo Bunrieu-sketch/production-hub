@@ -179,7 +179,7 @@ export default function OpsHiringPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <h1 style={{ fontSize: 22, fontWeight: 600 }}>Content Operations Hiring</h1>
-          <a href="/docs/hiring-flow" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none', padding: '3px 8px', borderRadius: 6, border: '1px solid var(--accent)', opacity: 0.8 }}>📋 Flow</a>
+          <a href="/docs/hiring-flow" target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#fff', textDecoration: 'none', padding: '5px 12px', borderRadius: 6, background: '#7c3aed', fontWeight: 600, display: 'inline-block' }}>📋 Flow</a>
         </div>
         <button className="btn btn-secondary" onClick={() => setShowNewApplicant(true)}>
           <Plus size={14} /> Applicant
