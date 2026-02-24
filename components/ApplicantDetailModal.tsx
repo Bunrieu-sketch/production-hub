@@ -348,8 +348,19 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
 
               {/* Score */}
               <div className="form-group">
-                <label className="form-label">Your Score (0-100)</label>
-                <input type="number" min={0} max={100} value={app.trial_task_score} onChange={e => update('trial_task_score', Number(e.target.value))} />
+                <label className="form-label">Your Score (1-10)</label>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  {[1,2,3,4,5,6,7,8,9,10].map(n => (
+                    <button key={n} onClick={() => update('trial_task_score', n === app.trial_task_score ? 0 : n)}
+                      style={{
+                        width: 32, height: 32, borderRadius: 6, border: '1px solid var(--border)',
+                        background: n <= app.trial_task_score ? 'var(--accent)' : 'var(--bg)',
+                        color: n <= app.trial_task_score ? 'white' : 'var(--text-dim)',
+                        fontWeight: 600, fontSize: 12, cursor: 'pointer',
+                        transition: 'all 0.15s',
+                      }}>{n}</button>
+                  ))}
+                </div>
               </div>
 
               {/* Evaluation notes */}

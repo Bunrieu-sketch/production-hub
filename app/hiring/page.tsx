@@ -295,6 +295,19 @@ export default function HiringPage() {
                   </span>
                 </div>
 
+                {/* Trial score badge */}
+                {app.trial_task_score > 0 && (
+                  <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 6,
+                      background: app.trial_task_score >= 7 ? '#3fb95025' : app.trial_task_score >= 4 ? '#d2992225' : '#f8514925',
+                      color: app.trial_task_score >= 7 ? '#3fb950' : app.trial_task_score >= 4 ? '#d29922' : '#f85149',
+                    }}>
+                      {app.trial_task_score}/10
+                    </span>
+                  </div>
+                )}
+
                 {/* Rating dots */}
                 {app.overall_rating > 0 && (
                   <div style={{ marginTop: 4 }}>
