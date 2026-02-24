@@ -39,7 +39,8 @@ interface Applicant {
   updated_at: string;
 }
 
-const STAGES = [
+// Default stage labels (Content Ops Manager flow)
+const DEFAULT_STAGES = [
   { key: 'applied', label: 'Applied', color: '#58a6ff' },
   { key: 'contacted', label: 'Contacted', color: '#d29922' },
   { key: 'trial_sent', label: 'Trial Sent', color: '#a371f7' },
@@ -47,6 +48,26 @@ const STAGES = [
   { key: 'interview', label: 'Interview', color: '#d29922' },
   { key: 'hired', label: 'Hired', color: '#3fb950' },
 ];
+
+// Editor positions use portfolio-based screening instead of trial tasks
+const EDITOR_STAGES = [
+  { key: 'applied', label: 'Applied', color: '#58a6ff' },
+  { key: 'contacted', label: 'Portfolio Requested', color: '#d29922' },
+  { key: 'trial_sent', label: 'Portfolio Received', color: '#a371f7' },
+  { key: 'evaluation', label: 'Portfolio Review', color: '#2f9e44' },
+  { key: 'interview', label: 'Interview', color: '#d29922' },
+  { key: 'hired', label: 'Hired', color: '#3fb950' },
+];
+
+function getStagesForPosition(positions: Position[], selectedPosition: number | null): typeof DEFAULT_STAGES {
+  if (!selectedPosition) return DEFAULT_STAGES;
+  const pos = positions.find(p => p.id === selectedPosition);
+  if (pos?.role_type === 'editor') return EDITOR_STAGES;
+  return DEFAULT_STAGES;
+}
+
+// Keep a reference for non-filtered views
+const STAGES = DEFAULT_STAGES;
 
 const REJECTED_STAGE = { key: 'rejected', label: 'Rejected', color: '#f85149' };
 
@@ -298,6 +319,10 @@ export default function HiringPage() {
              style={{ fontSize: 11, color: 'var(--text-dim)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
             📋 Content Ops Manager Flow
           </a>
+          <a href="/docs/junior-editor-flow"
+             style={{ fontSize: 11, color: 'var(--text-dim)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+            🎬 Junior Editor Flow
+          </a>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-secondary" onClick={() => setShowNewApplicant(true)}>
@@ -386,7 +411,7 @@ export default function HiringPage() {
 
       {/* Kanban board */}
       <div style={{ display: 'flex', gap: 10, overflowX: 'auto', flex: 1, paddingBottom: 16, minHeight: 0, overflow: 'hidden' }}>
-        {STAGES.map(stage => renderColumn(stage))}
+        {getStagesForPosition(positions, selectedPosition).map(stage => renderColumn(stage))}
 
         {/* Rejected column - collapsible */}
         {showRejected ? (
