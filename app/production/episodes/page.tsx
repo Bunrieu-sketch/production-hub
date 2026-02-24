@@ -295,7 +295,7 @@ export default function EpisodesPage() {
           })}
         </div>
       ) : (
-        <div style={{ display: 'flex', gap: 12, overflowX: 'auto', flex: 1, paddingBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 12, overflowX: 'auto', flex: 1, paddingBottom: 16, minHeight: 0, overflow: 'hidden' }}>
           {COLUMNS.map(column => {
             const columnEps = episodes.filter(e => column.stages.includes(e.stage));
             const isOver = dragOver === column.key;
