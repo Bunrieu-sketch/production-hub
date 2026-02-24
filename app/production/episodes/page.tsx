@@ -20,6 +20,8 @@ interface Episode {
   thumbnail_url: string;
   sponsor_name: string;
   series_id: number;
+  country: string;
+  region: string;
 }
 
 const STAGES = [
@@ -64,6 +66,7 @@ export default function EpisodesPage() {
   const [dragging, setDragging] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState<string | null>(null);
   const [seriesFilter, setSeriesFilter] = useState('');
+  const [countryFilter, setCountryFilter] = useState('');
   const [seriesList, setSeriesList] = useState<Array<{ id: number; title: string }>>([]);
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [failedThumbs, setFailedThumbs] = useState<Set<number>>(new Set());
@@ -86,12 +89,14 @@ export default function EpisodesPage() {
 
   const stageMap = useMemo(() => new Map(STAGES.map(stage => [stage.key, stage])), []);
   const listEpisodes = useMemo(() => {
-    return [...episodes].sort((a, b) => {
-      const aDate = a.actual_publish_date ? Date.parse(a.actual_publish_date) : 0;
-      const bDate = b.actual_publish_date ? Date.parse(b.actual_publish_date) : 0;
-      return bDate - aDate;
-    });
-  }, [episodes]);
+    return [...episodes]
+      .filter(e => !countryFilter || e.country === countryFilter)
+      .sort((a, b) => {
+        const aDate = a.actual_publish_date ? Date.parse(a.actual_publish_date) : 0;
+        const bDate = b.actual_publish_date ? Date.parse(b.actual_publish_date) : 0;
+        return bDate - aDate;
+      });
+  }, [episodes, countryFilter]);
 
   const markThumbFailed = (id: number) => {
     setFailedThumbs(prev => {
@@ -160,9 +165,17 @@ export default function EpisodesPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexShrink: 0 }}>
         <h1 style={{ fontSize: 22, fontWeight: 600 }}>Episodes</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <select value={countryFilter} onChange={e => { setCountryFilter(e.target.value); setSeriesFilter(''); }} style={{ width: 160 }}>
+            <option value="">All Countries</option>
+            {[...new Set(episodes.map(e => e.country).filter(Boolean))].sort().map(c => (
+              <option key={c} value={c}>{c} ({episodes.filter(ep => ep.country === c).length})</option>
+            ))}
+          </select>
           <select value={seriesFilter} onChange={e => setSeriesFilter(e.target.value)} style={{ width: 200 }}>
             <option value="">All Series</option>
-            {seriesList.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
+            {seriesList
+              .filter(s => !countryFilter || episodes.some(ep => ep.series_id === s.id && ep.country === countryFilter))
+              .map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
           </select>
           <div style={{ display: 'flex', gap: 6 }}>
             {(['kanban', 'list'] as Array<'kanban' | 'list'>).map(mode => {
@@ -299,7 +312,7 @@ export default function EpisodesPage() {
       ) : (
         <div style={{ display: 'flex', gap: 12, overflowX: 'auto', flex: 1, paddingBottom: 16, minHeight: 0, overflow: 'hidden' }}>
           {COLUMNS.map(column => {
-            const columnEps = episodes.filter(e => column.stages.includes(e.stage));
+            const columnEps = episodes.filter(e => column.stages.includes(e.stage) && (!countryFilter || e.country === countryFilter));
             const isOver = dragOver === column.key;
             const sortedEps = columnEps.sort((a, b) => {
               const aIndex = column.stages.indexOf(a.stage);
@@ -424,19 +437,21 @@ export default function EpisodesPage() {
                             )}
                           </div>
                         )}
-                        <span
-                          style={{
-                            fontSize: 9,
-                            padding: '1px 6px',
-                            borderRadius: 8,
-                            alignSelf: 'flex-start',
-                            fontWeight: 700,
-                            color: ep.episode_type === 'cornerstone' ? 'var(--accent)' : 'var(--text-dim)',
-                            background: ep.episode_type === 'cornerstone' ? 'rgba(163,113,247,0.1)' : 'rgba(139,148,158,0.05)',
-                          }}
-                        >
-                          {ep.episode_type === 'cornerstone' ? 'CORNERSTONE' : 'SECONDARY'}
-                        </span>
+                        {ep.country && (
+                          <span
+                            style={{
+                              fontSize: 9,
+                              padding: '1px 6px',
+                              borderRadius: 8,
+                              alignSelf: 'flex-start',
+                              fontWeight: 700,
+                              color: 'var(--blue)',
+                              background: 'rgba(56,139,253,0.1)',
+                            }}
+                          >
+                            {ep.country}{ep.region && ep.region !== ep.country ? ` (${ep.region})` : ''}
+                          </span>
+                        )}
                       </div>
                     );
                   })}
