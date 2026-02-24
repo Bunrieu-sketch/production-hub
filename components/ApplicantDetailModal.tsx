@@ -141,6 +141,19 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
       attitude_rating: Number(app.attitude_rating) || 0,
       motivation_rating: Number(app.motivation_rating) || 0,
     };
+    // Auto-reject if trial_task_score is set and below 4
+    const score = payload.trial_task_score;
+    if (score > 0 && score < 4 && payload.stage === 'evaluation') {
+      payload.stage = 'rejected';
+      payload.rejection_reason = `Trial task score: ${score}/10`;
+    }
+    // Auto-reject if portfolio_score is set and below 4
+    const pScore = payload.portfolio_score;
+    if (pScore > 0 && pScore < 4 && payload.stage === 'evaluation') {
+      payload.stage = 'rejected';
+      payload.rejection_reason = `Portfolio score: ${pScore}/10`;
+    }
+
     console.log('[DEBUG] Saving applicant:', JSON.stringify(payload, null, 2));
     try {
       const res = await fetch(`/api/hiring/applicants/${applicantId}`, {
@@ -155,6 +168,12 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
       }
       const result = await res.json();
       console.log('[DEBUG] Save response:', result);
+      // Show toast if auto-rejected
+      if (score > 0 && score < 4 && app.stage === 'evaluation') {
+        alert(`Moved to Rejected (trial task score: ${score}/10)`);
+      } else if (pScore > 0 && pScore < 4 && app.stage === 'evaluation') {
+        alert(`Moved to Rejected (portfolio score: ${pScore}/10)`);
+      }
       onSaved();
       onClose();
     } catch (err) {
