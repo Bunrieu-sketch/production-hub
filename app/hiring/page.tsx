@@ -385,7 +385,7 @@ export default function HiringPage() {
       </div>
 
       {/* Kanban board */}
-      <div style={{ display: 'flex', gap: 10, overflowX: 'auto', flex: 1, paddingBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 10, overflowX: 'auto', flex: 1, paddingBottom: 16, minHeight: 0, overflow: 'hidden' }}>
         {STAGES.map(stage => renderColumn(stage))}
 
         {/* Rejected column - collapsible */}

@@ -492,7 +492,7 @@ export default function SponsorsPage() {
       )}
 
       {/* Kanban */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: 10, flex: 1, paddingBottom: 16, overflow: 'hidden' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: 10, flex: 1, paddingBottom: 16, overflow: 'hidden', minHeight: 0 }}>
         {STAGES.map(stage => {
           const stageSponsors = sponsors.filter(s => s.stage === stage.key);
           const isOver = dragOver === stage.key;
