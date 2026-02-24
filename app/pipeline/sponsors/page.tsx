@@ -16,7 +16,10 @@ interface Sponsor {
   payment_terms_brand_days: number; payment_terms_agency_days: number;
   invoice_amount: number; invoice_date: string;
   notes: string; next_action: string; next_action_due: string;
-  offer_date: string; contract_date: string; episode_id: number | null;
+  offer_date: string; contract_date: string; brief_due: string; brief_received_date: string;
+  film_by: string; rough_cut_due: string; brand_review_due: string;
+  exclusivity_window_days: number; exclusivity_category: string;
+  episode_id: number | null;
   sponsor_source?: 'manual' | 'description' | 'pinned_comment';
   cpm_rate: number | null; cpm_cap: number | null; mvg: number | null;
   views_at_30_days: number;
@@ -314,7 +317,7 @@ function calcPaymentBreakdown(sponsor: Sponsor) {
   return { live, brandPays, youPaid };
 }
 
-type DetailTab = 'overview' | 'script' | 'checklist' | 'payment';
+type DetailTab = 'overview' | 'script' | 'checklist' | 'payment' | 'details';
 
 export default function SponsorsPage() {
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
@@ -681,7 +684,7 @@ export default function SponsorsPage() {
                 </div>
               </div>
               <div className="tab-bar" style={{ borderBottom: 'none', marginBottom: 0 }}>
-                {(['overview', 'script', 'checklist', 'payment'] as DetailTab[]).map(t => (
+                {(['overview', 'script', 'checklist', 'payment', 'details'] as DetailTab[]).map(t => (
                   <button key={t} className={`tab ${detailTab === t ? 'active' : ''}`} onClick={() => setDetailTab(t)}>
                     {t.charAt(0).toUpperCase() + t.slice(1)}
                   </button>
@@ -693,11 +696,162 @@ export default function SponsorsPage() {
               {/* Overview Tab */}
               {detailTab === 'overview' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {/* Next Action — most important thing */}
+                  {selected.next_action && (
+                    <div style={{
+                      background: selected.next_action_due && new Date(selected.next_action_due) < new Date() ? 'rgba(248,81,73,0.08)' : 'rgba(163,113,247,0.08)',
+                      border: `1px solid ${selected.next_action_due && new Date(selected.next_action_due) < new Date() ? 'var(--red)' : 'var(--accent)'}`,
+                      borderRadius: 8, padding: 14,
+                    }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: selected.next_action_due && new Date(selected.next_action_due) < new Date() ? 'var(--red)' : 'var(--accent)', letterSpacing: '0.04em', marginBottom: 6 }}>
+                        {selected.next_action_due && new Date(selected.next_action_due) < new Date() ? '⚠️ OVERDUE' : '⏭ NEXT ACTION'}
+                      </div>
+                      <div style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.4 }}>{selected.next_action}</div>
+                      {selected.next_action_due && (
+                        <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 6 }}>Due: {formatFullDate(selected.next_action_due)}</div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Deal value + key info row */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                    <div style={{ background: 'var(--bg)', borderRadius: 8, padding: 12, border: '1px solid var(--border)', textAlign: 'center' }}>
+                      <div style={{ fontSize: 10, color: 'var(--text-dim)', fontWeight: 600, marginBottom: 4 }}>DEAL VALUE</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--green)' }}>
+                        {selected.deal_value_net > 0 ? `$${selected.deal_value_net.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '—'}
+                      </div>
+                      <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>
+                        {selected.deal_type === 'cpm' ? 'CPM' : 'net'}
+                        {selected.mvg ? ` · ${(selected.mvg / 1000).toFixed(0)}k MVG` : ''}
+                      </div>
+                    </div>
+                    <div style={{ background: 'var(--bg)', borderRadius: 8, padding: 12, border: '1px solid var(--border)', textAlign: 'center' }}>
+                      <div style={{ fontSize: 10, color: 'var(--text-dim)', fontWeight: 600, marginBottom: 4 }}>PLACEMENT</div>
+                      <div style={{ fontSize: 14, fontWeight: 600 }}>{(selected.placement || 'TBD').replace(/_/g, ' ')}</div>
+                      <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>{selected.integration_length_seconds || 60}s</div>
+                    </div>
+                    <div style={{ background: 'var(--bg)', borderRadius: 8, padding: 12, border: '1px solid var(--border)', textAlign: 'center' }}>
+                      <div style={{ fontSize: 10, color: 'var(--text-dim)', fontWeight: 600, marginBottom: 4 }}>SCRIPT</div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: selected.script_status === 'approved' ? 'var(--green)' : selected.script_status === 'submitted' ? 'var(--blue)' : 'var(--orange)' }}>
+                        {(selected.script_status || 'not started').replace(/_/g, ' ')}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CTA + Promo (if exists) */}
+                  {(selected.promo_code || selected.tracking_link) && (
+                    <div style={{
+                      background: 'rgba(63,185,80,0.08)',
+                      border: '1px solid rgba(63,185,80,0.3)',
+                      borderRadius: 8, padding: 12,
+                    }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--green)', marginBottom: 6, letterSpacing: '0.04em' }}>CTA &amp; PROMO</div>
+                      <div style={{ display: 'flex', gap: 16 }}>
+                        {selected.promo_code && (
+                          <div>
+                            <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>Code: </span>
+                            <span style={{ fontFamily: 'monospace', fontWeight: 700, background: 'var(--bg)', padding: '2px 6px', borderRadius: 4 }}>{selected.promo_code}</span>
+                          </div>
+                        )}
+                        {selected.tracking_link && (
+                          <div style={{ fontSize: 11, color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            Link: <span style={{ color: 'var(--text)' }}>{selected.tracking_link.substring(0, 50)}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Key Dates */}
+                  <div style={{ background: 'var(--bg)', borderRadius: 8, padding: 12, border: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.04em', marginBottom: 8 }}>KEY DATES</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                      {[
+                        { label: 'Brief Due', value: selected.brief_due, field: 'brief_due' },
+                        { label: 'Script Due', value: selected.script_due, field: 'script_due' },
+                        { label: 'Film By', value: selected.film_by, field: 'film_by' },
+                        { label: 'Live Date', value: selected.live_date, field: 'live_date' },
+                      ].map(d => {
+                        const isOverdue = d.value && new Date(d.value) < new Date();
+                        return (
+                          <div key={d.field} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+                            <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>{d.label}</span>
+                            <input
+                              type="date"
+                              defaultValue={d.value || ''}
+                              onBlur={e => updateField(selected.id, d.field, e.target.value || null)}
+                              style={{ fontSize: 12, fontWeight: 600, color: isOverdue ? 'var(--red)' : 'var(--text)', background: 'transparent', border: 'none', textAlign: 'right', width: 120, cursor: 'pointer' }}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Stage + Progress controls */}
+                  <div className="grid-2">
+                    <div className="form-group">
+                      <label className="form-label">Stage</label>
+                      <select value={selected.stage} onChange={e => updateStage(selected.id, e.target.value)}>
+                        {STAGES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+                      </select>
+                    </div>
+                    {(selected.stage === 'leads' || selected.stage === 'content') && (
+                      <div className="form-group">
+                        <label className="form-label">Progress</label>
+                        <select
+                          value={normalizeSubStatus(selected.stage, selected.sub_status) || ''}
+                          onChange={e => updateField(selected.id, 'sub_status', e.target.value)}
+                        >
+                          {(selected.stage === 'leads' ? LEAD_SUB_STATUSES : CONTENT_STEPS).map(step => (
+                            <option key={step.key} value={step.key}>{step.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Brief summary (if exists) */}
+                  {selected.brief_text && (
+                    <div style={{ background: 'var(--bg)', borderRadius: 8, padding: 12, border: '1px solid var(--border)' }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.04em', marginBottom: 6 }}>BRIEF SUMMARY</div>
+                      <div style={{ fontSize: 12, lineHeight: 1.6, color: 'var(--text)', whiteSpace: 'pre-wrap', maxHeight: 120, overflow: 'auto' }}>
+                        {selected.brief_text}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Next action editor */}
+                  <div className="form-group">
+                    <label className="form-label">Next Action</label>
+                    <input defaultValue={selected.next_action || ''} onBlur={e => updateField(selected.id, 'next_action', e.target.value)} placeholder="What needs to happen next?" />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Next Action Due</label>
+                    <input type="date" defaultValue={selected.next_action_due || ''} onBlur={e => updateField(selected.id, 'next_action_due', e.target.value || null)} />
+                  </div>
+
+                  {/* Notes */}
+                  <div className="form-group">
+                    <label className="form-label">Notes</label>
+                    <textarea rows={3} defaultValue={selected.notes || ''} onBlur={e => updateField(selected.id, 'notes', e.target.value)} placeholder="Notes..." />
+                  </div>
+                </div>
+              )}
+
+              {/* Details Tab (admin/contact info) */}
+              {detailTab === 'details' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   <div className="grid-2">
                     {[
                       { label: 'Offer Date', field: 'offer_date', value: selected.offer_date, type: 'date' },
                       { label: 'Contract Date', field: 'contract_date', value: selected.contract_date, type: 'date' },
+                      { label: 'Brief Due', field: 'brief_due', value: selected.brief_due, type: 'date' },
+                      { label: 'Brief Received', field: 'brief_received_date', value: selected.brief_received_date, type: 'date' },
                       { label: 'Script Due', field: 'script_due', value: selected.script_due, type: 'date' },
+                      { label: 'Film By', field: 'film_by', value: selected.film_by, type: 'date' },
+                      { label: 'Rough Cut Due', field: 'rough_cut_due', value: selected.rough_cut_due, type: 'date' },
+                      { label: 'Brand Review Due', field: 'brand_review_due', value: selected.brand_review_due, type: 'date' },
                       { label: 'Live Date', field: 'live_date', value: selected.live_date, type: 'date' },
                     ].map(({ label, field, value, type }) => (
                       <div key={field} className="form-group">
@@ -736,40 +890,34 @@ export default function SponsorsPage() {
                     </div>
                   </div>
 
-                  <div className="form-group">
-                    <label className="form-label">Move Stage</label>
-                    <select value={selected.stage} onChange={e => updateStage(selected.id, e.target.value)}>
-                      {STAGES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
-                    </select>
+                  <div className="grid-2">
+                    <div className="form-group">
+                      <label className="form-label">Deal Value (Gross)</label>
+                      <input type="number" defaultValue={selected.deal_value_gross || ''} onBlur={e => updateField(selected.id, 'deal_value_gross', parseFloat(e.target.value))} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Deal Value (Net)</label>
+                      <input type="number" defaultValue={selected.deal_value_net || ''} onBlur={e => updateField(selected.id, 'deal_value_net', parseFloat(e.target.value))} />
+                    </div>
                   </div>
 
-                  {(selected.stage === 'leads' || selected.stage === 'content') && (
+                  <div className="grid-2">
                     <div className="form-group">
-                      <label className="form-label">Stage Progress</label>
-                      <select
-                        value={normalizeSubStatus(selected.stage, selected.sub_status) || ''}
-                        onChange={e => updateField(selected.id, 'sub_status', e.target.value)}
-                      >
-                        {(selected.stage === 'leads' ? LEAD_SUB_STATUSES : CONTENT_STEPS).map(step => (
-                          <option key={step.key} value={step.key}>{step.label}</option>
-                        ))}
-                      </select>
+                      <label className="form-label">MVG (Min Views)</label>
+                      <input type="number" defaultValue={selected.mvg || ''} onBlur={e => updateField(selected.id, 'mvg', parseInt(e.target.value) || null)} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Exclusivity (days)</label>
+                      <input type="number" defaultValue={selected.exclusivity_window_days || ''} onBlur={e => updateField(selected.id, 'exclusivity_window_days', parseInt(e.target.value) || 0)} />
+                    </div>
+                  </div>
+
+                  {selected.exclusivity_category && (
+                    <div className="form-group">
+                      <label className="form-label">Exclusivity Category</label>
+                      <input defaultValue={selected.exclusivity_category || ''} onBlur={e => updateField(selected.id, 'exclusivity_category', e.target.value)} />
                     </div>
                   )}
-
-                  <div className="form-group">
-                    <label className="form-label">Next Action</label>
-                    <input defaultValue={selected.next_action || ''} onBlur={e => updateField(selected.id, 'next_action', e.target.value)} placeholder="What needs to happen next?" />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Next Action Due</label>
-                    <input type="date" defaultValue={selected.next_action_due || ''} onBlur={e => updateField(selected.id, 'next_action_due', e.target.value || null)} />
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Notes</label>
-                    <textarea rows={4} defaultValue={selected.notes || ''} onBlur={e => updateField(selected.id, 'notes', e.target.value)} placeholder="Notes..." />
-                  </div>
                 </div>
               )}
 
@@ -792,6 +940,61 @@ export default function SponsorsPage() {
                     </div>
                   </div>
 
+                  {/* CTA + Promo Code highlight box */}
+                  {(selected.promo_code || selected.tracking_link) && (
+                    <div style={{
+                      background: 'rgba(63,185,80,0.08)',
+                      border: '1px solid rgba(63,185,80,0.3)',
+                      borderRadius: 8, padding: 14,
+                    }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--green)', marginBottom: 8, letterSpacing: '0.04em' }}>CTA &amp; PROMO</div>
+                      {selected.promo_code && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                          <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Promo Code</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'monospace', background: 'var(--bg)', padding: '2px 8px', borderRadius: 4, border: '1px solid var(--border)' }}>{selected.promo_code}</span>
+                        </div>
+                      )}
+                      {selected.tracking_link && (
+                        <div style={{ fontSize: 12, color: 'var(--text-dim)', wordBreak: 'break-all' }}>
+                          <span>Link: </span><span style={{ color: 'var(--text)' }}>{selected.tracking_link}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Script preview (read-only view) */}
+                  {selected.script_draft && (
+                    <div style={{
+                      background: 'var(--bg)', border: '1px solid var(--border)',
+                      borderRadius: 8, padding: 16,
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.04em' }}>SCRIPT</span>
+                        <button
+                          className="btn btn-secondary"
+                          style={{ padding: '3px 8px', fontSize: 10 }}
+                          onClick={() => {
+                            const el = document.getElementById('script-edit-area');
+                            if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+                          }}
+                        >
+                          Edit
+                        </button>
+                      </div>
+                      <div style={{ fontSize: 12, lineHeight: 1.7, whiteSpace: 'pre-wrap', color: 'var(--text)' }}>
+                        {selected.script_draft}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Editable script (hidden by default if script exists) */}
+                  <div id="script-edit-area" style={{ display: selected.script_draft ? 'none' : 'block' }}>
+                    <div className="form-group">
+                      <label className="form-label">Script Draft</label>
+                      <textarea rows={16} defaultValue={selected.script_draft || ''} onBlur={e => updateField(selected.id, 'script_draft', e.target.value)} placeholder="Write script here..." style={{ fontFamily: 'inherit', lineHeight: 1.6 }} />
+                    </div>
+                  </div>
+
                   <div className="form-group">
                     <label className="form-label">Brief Text</label>
                     <textarea rows={4} defaultValue={selected.brief_text || ''} onBlur={e => updateField(selected.id, 'brief_text', e.target.value)} placeholder="Paste brief here..." />
@@ -800,11 +1003,6 @@ export default function SponsorsPage() {
                   <div className="form-group">
                     <label className="form-label">Brief Link</label>
                     <input defaultValue={selected.brief_link || ''} onBlur={e => updateField(selected.id, 'brief_link', e.target.value)} placeholder="https://..." />
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Script Draft</label>
-                    <textarea rows={12} defaultValue={selected.script_draft || ''} onBlur={e => updateField(selected.id, 'script_draft', e.target.value)} placeholder="Write script here..." style={{ fontFamily: 'inherit', lineHeight: 1.6 }} />
                   </div>
                 </div>
               )}

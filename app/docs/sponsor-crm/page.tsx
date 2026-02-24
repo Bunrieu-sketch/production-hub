@@ -191,6 +191,40 @@ net   = gross × 0.8  (20% agency)`}
         </div>
       </section>
 
+      {/* Automated Pipeline */}
+      <section style={{ marginBottom: 32 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Zap size={16} style={{ color: 'var(--accent)' }} /> Automated Pipeline (Cron)
+        </h2>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8, padding: 16 }}>
+          <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 12 }}>
+            Runs every <strong style={{ color: 'var(--text)' }}>4 hours</strong>. Each stage triggers the next action automatically.
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[
+              { step: '1. New inquiries', action: 'Scan email for sponsor inquiries, create card, extract brand/contact/offer, notify Andrew', trigger: 'New email from brand or forwarded by Andrew' },
+              { step: '2. Negotiation', action: 'Track email back-and-forth, update deal terms, notify when terms are agreed', trigger: 'Deal in leads/negotiation stage' },
+              { step: '3. Contract setup', action: 'Log contract date, track product shipping, monitor brief deadline, chase if overdue', trigger: 'Deal moves to contracted' },
+              { step: '4. Brief processing', action: 'Download attachments, extract key details, save summary, write humanized script, send to Andrew', trigger: 'Brief received via email' },
+              { step: '5. Script review', action: 'Andrew approves or edits on Telegram. Revise and loop until approved.', trigger: 'Script draft sent to Andrew' },
+              { step: '6. Brand approval', action: 'Submit to brand, monitor email for feedback, generate PDF on approval. Chase if 5+ days silent.', trigger: 'Andrew approves script' },
+              { step: '7. Filming & edit', action: 'Track film-by deadline, rough cut deadline, brand review. Nudge if deadlines slip.', trigger: 'Brand approves script' },
+              { step: '8. Published', action: 'Auto-detect video via YouTube API, verify tracking link + pinned comment, start view tracking', trigger: 'Video goes live' },
+              { step: '9. CPM tracking', action: 'Track views for 30 days, alert when ready to lock and invoice', trigger: 'CPM deal published' },
+              { step: '10. Invoice & payment', action: 'Calculate payment timeline, track brand→agency→you, flag overdue payments', trigger: 'Invoice sent' },
+              { step: '11. Paid', action: 'Mark complete, update YTD revenue totals', trigger: 'Payment received' },
+              { step: '12. Stale deal check', action: 'Flag any deals where next_action_due has passed across ALL stages', trigger: 'Every run' },
+            ].map(item => (
+              <div key={item.step} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, padding: 10 }}>
+                <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 4 }}>{item.step}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 4 }}>{item.action}</div>
+                <div style={{ fontSize: 10, color: 'var(--accent)' }}>Trigger: {item.trigger}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Database */}
       <section>
         <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
