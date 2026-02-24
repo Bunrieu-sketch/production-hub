@@ -137,6 +137,39 @@ Team & Operations
 Andrew Fraser | YouTube
 montythehandler@gmail.com`}
           </pre>
+
+          <div style={{ fontSize: 12, fontWeight: 600, marginTop: 16, marginBottom: 8 }}>Trial Task (PDF Content)</div>
+          <div style={{ background: 'var(--bg)', padding: 16, borderRadius: 6, border: '1px solid var(--border)', fontSize: 11, lineHeight: 1.8, color: 'var(--text)' }}>
+            <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>Pre-Production Trial Task</div>
+            <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 14 }}>Content Idea Discovery Task</div>
+
+            <p>Hey,</p>
+            <p>Thanks for applying — we&apos;re excited to learn more about you through this task.</p>
+            <p>We want to see how you think about content. Specifically, can you find things that make people stop scrolling and go &quot;wait, what is that?&quot;</p>
+            <p><strong>Your task is simple: find 4 content ideas that genuinely excite you.</strong> For each one, track down a real TikTok, Instagram post, or image that inspired it and share it with us.</p>
+            <p>The only rule is that it has to clear at least one of these bars — it&apos;s otherworldly, has a serious wow factor, makes you want to show someone next to you, or it&apos;s something fascinating about food or culture that most people have never seen.</p>
+
+            <p><strong>For each idea, tell us:</strong></p>
+            <div style={{ paddingLeft: 12, marginBottom: 8 }}>
+              <div>1. <strong>What is it?</strong> Just describe it simply — what are we looking at?</div>
+              <div>2. <strong>Why would this stop someone mid-scroll?</strong> This is the big one. What&apos;s the hook? Why does it matter? Why would someone share it?</div>
+              <div>3. <strong>The post or image</strong> that made you think of it — a link or screenshot is fine.</div>
+            </div>
+
+            <p>Generic travel content isn&apos;t what we&apos;re after. We want the hidden, the bizarre, the beautiful, the &quot;how does this even exist&quot; stuff.</p>
+            <p>Drop everything into a Google Doc and send the link to montythehandler@gmail.com within two days.</p>
+
+            <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+              <div style={{ fontWeight: 600, marginBottom: 6 }}>Bonus Points</div>
+              <div style={{ paddingLeft: 8 }}>
+                <div>• Ideas we&apos;ve never seen done on YouTube before</div>
+                <div>• Ideas that genuinely get us excited — the kind that make us say &apos;we HAVE to film this&apos;</div>
+                <div>• Ideas that clearly fit the style of the channel — otherworldly, extreme, at the intersection of food and culture</div>
+                <div>• It&apos;s something incredibly unique that most people have never heard of — and there&apos;s a genuine story behind it</div>
+              </div>
+              <div style={{ marginTop: 8, fontStyle: 'italic', color: 'var(--text-dim)' }}>These aren&apos;t requirements, but they&apos;ll make your submission stand out.</div>
+            </div>
+          </div>
         </div>
       </section>
 
