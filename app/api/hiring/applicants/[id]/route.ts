@@ -18,7 +18,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const { id } = await params;
   const db = getDb();
   const body = await req.json();
-  const fields = Object.keys(body).filter(k => k !== 'id' && k !== 'position_title');
+  const fields = Object.keys(body).filter(k => k !== 'id' && k !== 'position_title' && k !== 'role_type');
   if (fields.length === 0) return NextResponse.json({ error: 'No fields' }, { status: 400 });
   const setClauses = fields.map(f => `${f} = ?`).join(', ');
   const values = fields.map(f => body[f]);
