@@ -33,8 +33,10 @@ const STAGES = [
 ];
 
 const COLUMNS = [
-  { key: 'pipeline', label: 'Pipeline', color: 'var(--blue)', stages: ['idea', 'outlined', 'confirmed'], defaultStage: 'idea' },
-  { key: 'production', label: 'Production', color: 'var(--accent)', stages: ['filming', 'editing', 'review'], defaultStage: 'filming' },
+  { key: 'ideation', label: 'Ideation', color: '#868e96', stages: ['idea'], defaultStage: 'idea' },
+  { key: 'pre-production', label: 'Pre-Production', color: 'var(--blue)', stages: ['outlined', 'confirmed'], defaultStage: 'outlined' },
+  { key: 'production', label: 'Production', color: 'var(--accent)', stages: ['filming'], defaultStage: 'filming' },
+  { key: 'editing', label: 'Editing', color: 'var(--orange)', stages: ['editing', 'review'], defaultStage: 'editing' },
   { key: 'published', label: 'Published', color: 'var(--green)', stages: ['published'], defaultStage: 'published' },
 ];
 
