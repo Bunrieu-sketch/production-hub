@@ -147,24 +147,36 @@ montythehandler@gmail.com`}
         </h2>
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8, padding: 16 }}>
           <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 12 }}>
-            Scoring criteria for trial task submissions.
+            Score each submission 1-10. Score is visible on the kanban card.
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {[1,2,3,4,5,6,7,8,9,10].map(n => (
+                <div key={n} style={{
+                  width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: n <= 7 ? 'var(--bg)' : 'var(--bg)', border: '1px solid var(--border)',
+                  fontSize: 11, fontWeight: 600, color: 'var(--text-dim)',
+                }}>{n}</div>
+              ))}
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 8 }}>
+              <span style={{ color: '#f85149' }}>1-3</span>{' / '}
+              <span style={{ color: '#d29922' }}>4-6</span>{' / '}
+              <span style={{ color: '#3fb950' }}>7-10</span>
+            </div>
+          </div>
+
+          <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>Bonus Points</div>
+          <div style={{ background: 'var(--bg)', padding: 12, borderRadius: 6, border: '1px solid var(--border)', marginBottom: 16 }}>
             {[
-              { criteria: 'Quality of Research', score: '/5' },
-              { criteria: 'Presentation', score: '/5' },
-              { criteria: 'Initiative', score: '/5' },
-              { criteria: 'Communication', score: '/5' },
-              { criteria: 'Timeliness', score: '/5' },
-              { criteria: 'Total', score: '/25', highlight: true },
-            ].map(c => (
-              <div key={c.criteria} style={{
-                background: 'var(--bg)', padding: 10, borderRadius: 6,
-                border: `1px solid ${c.highlight ? 'var(--accent)' : 'var(--border)'}`,
-                textAlign: 'center',
-              }}>
-                <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 2, color: c.highlight ? 'var(--accent)' : 'var(--text)' }}>{c.criteria}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: c.highlight ? 'var(--accent)' : 'var(--text-dim)' }}>{c.score}</div>
+              "Ideas we've never seen done on YouTube before",
+              "Ideas that genuinely get us excited -- the kind that make us say 'we HAVE to film this'",
+              "Ideas that clearly fit the style of the channel -- otherworldly, extreme, at the intersection of food and culture",
+              "It's something incredibly unique that most people have never heard of -- and there's a genuine story behind it",
+            ].map((b, i) => (
+              <div key={i} style={{ fontSize: 11, color: 'var(--text)', marginBottom: 6, display: 'flex', gap: 6 }}>
+                <span style={{ color: 'var(--accent)', flexShrink: 0 }}>•</span>
+                <span>{b}</span>
               </div>
             ))}
           </div>
