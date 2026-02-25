@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
 import path from 'path';
+import { randomUUID } from 'crypto';
 
 const DB_PATH = path.join(process.cwd(), 'production-hub.db');
 
@@ -314,12 +315,31 @@ function initDb() {
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
     );
+
+    -- ── Field Contacts ───────────────────────────────────────────────────
+    CREATE TABLE IF NOT EXISTS field_contacts (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      destination TEXT NOT NULL,
+      type TEXT NOT NULL CHECK(type IN ('fixer', 'hotel', 'creator', 'talent', 'other')),
+      stage TEXT NOT NULL DEFAULT 'cold' CHECK(stage IN ('cold', 'contacted', 'responded', 'confirmed', 'passed')),
+      wa TEXT,
+      email TEXT,
+      instagram TEXT,
+      website TEXT,
+      notes TEXT,
+      source TEXT,
+      priority INTEGER DEFAULT 2 CHECK(priority IN (1, 2, 3)),
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
   `);
 
   migrateEpisodesSchema();
   migrateSeriesSchema();
   migrateSponsorsSchema();
   migrateHiringStages();
+  seedFieldContacts();
 }
 
 function migrateEpisodesSchema() {
@@ -585,6 +605,53 @@ function migrateHiringStages() {
 }
 
 // ── Migration helpers ──────────────────────────────────────────────────────
+
+function seedFieldContacts() {
+  if (!db) return;
+  const database = db;
+  const count = (database.prepare('SELECT COUNT(*) as count FROM field_contacts').get() as { count: number }).count;
+  if (count > 0) return;
+
+  const seed = [
+    { name: 'Daniel Bonat', destination: 'Sumba', type: 'fixer', stage: 'cold', wa: '+62813397221700' },
+    { name: 'Imelda / Sumba Voyage', destination: 'Sumba', type: 'fixer', stage: 'cold', email: 'contact@sumbavoyage.com' },
+    { name: 'Olivia Sumba', destination: 'Sumba', type: 'fixer', stage: 'cold', wa: '+62812362253280', email: 'obilly918@gmail.com' },
+    { name: 'Mr Dody go', destination: 'Sumba', type: 'fixer', stage: 'cold', wa: '+6282216877787', email: 'dodymelodic12@gmail.com', instagram: 'dody_chavva' },
+    { name: 'Hamdan', destination: 'Sumba', type: 'fixer', stage: 'cold', wa: '+62821458433480' },
+    { name: 'NIHI Sumba', destination: 'Sumba', type: 'hotel', stage: 'cold', instagram: 'nihisumba' },
+    { name: 'Cap Karoso', destination: 'Sumba', type: 'hotel', stage: 'cold', instagram: 'cap_karoso' },
+    { name: 'The Dreamforge', destination: 'Sri Lanka', type: 'fixer', stage: 'cold', email: 'info@dreamforge.tv' },
+    { name: 'Shenelle Rodrigo', destination: 'Sri Lanka', type: 'creator', stage: 'cold', instagram: 'sheneller' },
+    { name: 'Wild Coast Tented Lodge', destination: 'Sri Lanka', type: 'hotel', stage: 'cold', instagram: 'wildcoastlodge' },
+  ];
+
+  const insert = database.prepare(`
+    INSERT INTO field_contacts
+      (id, name, destination, type, stage, wa, email, instagram, website, notes, source, priority)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const insertMany = database.transaction((items: typeof seed) => {
+    for (const item of items) {
+      insert.run(
+        randomUUID(),
+        item.name,
+        item.destination,
+        item.type,
+        item.stage,
+        item.wa ?? null,
+        item.email ?? null,
+        item.instagram ?? null,
+        null,
+        null,
+        null,
+        2
+      );
+    }
+  });
+
+  insertMany(seed);
+}
 
 export function generateMilestones(seriesId: number, shootStart: string) {
   const database = getDb();

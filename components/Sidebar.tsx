@@ -43,6 +43,7 @@ export function Sidebar() {
       items: [
         { href: '/pipeline/sponsors', icon: <HandCoins size={16} />, label: 'Sponsors' },
         { href: '/pipeline/people', icon: <Users size={16} />, label: 'People' },
+        { href: '/field-contacts', icon: <FolderOpen size={16} />, label: 'Field Contacts' },
         { href: '/hiring/editors', icon: <UserPlus size={16} />, label: 'Hiring: Editors' },
         { href: '/hiring/ops', icon: <UserPlus size={16} />, label: 'Hiring: Content Ops' },
       ],
