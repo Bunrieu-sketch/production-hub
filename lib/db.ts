@@ -321,27 +321,27 @@ function initDb() {
       name TEXT NOT NULL,
       codename TEXT,
       role TEXT NOT NULL,
-      role_type TEXT DEFAULT "SPC" CHECK(role_type IN ("LEAD", "INT", "SPC")),
-      status TEXT DEFAULT "idle" CHECK(status IN ("idle", "working", "blocked", "offline")),
-      current_task_id INTEGER REFERENCES mc_tasks(id),
+      role_type TEXT DEFAULT 'SPC' CHECK(role_type IN ('LEAD', 'INT', 'SPC')),
+      status TEXT DEFAULT 'idle' CHECK(status IN ('idle', 'working', 'blocked', 'offline')),
+      current_task_id INTEGER,
       session_key TEXT,
-      avatar_color TEXT DEFAULT "#10b981",
-      avatar_icon TEXT DEFAULT "bot",
+      avatar_color TEXT DEFAULT '#10b981',
+      avatar_icon TEXT DEFAULT 'bot',
       last_heartbeat TEXT,
-      created_at TEXT DEFAULT (datetime("now"))
+      created_at TEXT DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS mc_tasks (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
       description TEXT,
-      status TEXT DEFAULT "inbox" CHECK(status IN ("inbox", "assigned", "in_progress", "review", "done")),
-      priority TEXT DEFAULT "normal" CHECK(priority IN ("low", "normal", "high", "urgent")),
-      assignee_ids TEXT DEFAULT "[]",
-      tags TEXT DEFAULT "[]",
+      status TEXT DEFAULT 'inbox' CHECK(status IN ('inbox', 'assigned', 'in_progress', 'review', 'done')),
+      priority TEXT DEFAULT 'normal' CHECK(priority IN ('low', 'normal', 'high', 'urgent')),
+      assignee_ids TEXT DEFAULT '[]',
+      tags TEXT DEFAULT '[]',
       created_by TEXT REFERENCES mc_agents(id),
-      created_at TEXT DEFAULT (datetime("now")),
-      updated_at TEXT DEFAULT (datetime("now"))
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS mc_messages (
@@ -349,7 +349,7 @@ function initDb() {
       task_id INTEGER REFERENCES mc_tasks(id),
       from_agent_id TEXT REFERENCES mc_agents(id),
       content TEXT NOT NULL,
-      created_at TEXT DEFAULT (datetime("now"))
+      created_at TEXT DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS mc_activities (
@@ -358,17 +358,17 @@ function initDb() {
       agent_id TEXT REFERENCES mc_agents(id),
       message TEXT NOT NULL,
       task_id INTEGER REFERENCES mc_tasks(id),
-      created_at TEXT DEFAULT (datetime("now"))
+      created_at TEXT DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS mc_documents (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
       content TEXT,
-      type TEXT DEFAULT "deliverable" CHECK(type IN ("deliverable", "research", "protocol", "brief", "other")),
+      type TEXT DEFAULT 'deliverable' CHECK(type IN ('deliverable', 'research', 'protocol', 'brief', 'other')),
       task_id INTEGER REFERENCES mc_tasks(id),
       agent_id TEXT REFERENCES mc_agents(id),
-      created_at TEXT DEFAULT (datetime("now"))
+      created_at TEXT DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS mc_notifications (
@@ -378,7 +378,7 @@ function initDb() {
       delivered INTEGER DEFAULT 0,
       task_id INTEGER REFERENCES mc_tasks(id),
       from_agent_id TEXT REFERENCES mc_agents(id),
-      created_at TEXT DEFAULT (datetime("now"))
+      created_at TEXT DEFAULT (datetime('now'))
     );
   `);
 
