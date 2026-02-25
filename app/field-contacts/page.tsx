@@ -30,14 +30,6 @@ const STAGES = [
 
 const TYPES: Array<FieldContact['type']> = ['fixer', 'hotel', 'creator', 'talent', 'other'];
 
-const TYPE_COLORS: Record<FieldContact['type'], string> = {
-  fixer: 'var(--green)',
-  hotel: 'var(--blue)',
-  creator: 'var(--accent)',
-  talent: 'var(--orange)',
-  other: '#8b949e',
-};
-
 const PRIORITY_COLORS: Record<FieldContact['priority'], string> = {
   1: '#f85149',
   2: '#d29922',
@@ -186,51 +178,63 @@ export default function FieldContactsPage() {
     load();
   };
 
+  const TYPE_BADGE_CLASSES: Record<FieldContact['type'], string> = {
+    fixer: 'bg-emerald-900 text-emerald-300 border border-emerald-700',
+    hotel: 'bg-blue-900 text-blue-300 border border-blue-700',
+    creator: 'bg-purple-900 text-purple-300 border border-purple-700',
+    talent: 'bg-orange-900 text-orange-300 border border-orange-700',
+    other: 'bg-gray-800 text-gray-300 border border-gray-600',
+  };
+
   return (
     <div style={{ display: 'flex', gap: 16, height: 'calc(100vh - 48px)' }}>
       <aside style={{ width: 240, flexShrink: 0 }}>
         <div className="panel" style={{ height: '100%', overflow: 'auto' }}>
-          <div style={{ fontSize: 12, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 10 }}>
+          <div className="text-gray-400 uppercase tracking-wider text-xs" style={{ marginBottom: 10 }}>
             Destinations
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 18 }}>
             <button
-              className="btn"
+              className={`btn group ${destinationFilter === 'all' ? 'text-white' : 'text-gray-300'}`}
               style={{ justifyContent: 'space-between', background: destinationFilter === 'all' ? 'var(--hover-bg)' : 'transparent' }}
               onClick={() => setDestinationFilter('all')}
             >
-              <span>All destinations</span>
-              <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>{contacts.length}</span>
+              <span className="text-gray-200 group-hover:text-white">All destinations</span>
+              <span className="bg-gray-700 text-gray-100 text-xs px-1.5 py-0.5 rounded-full font-medium">
+                {contacts.length}
+              </span>
             </button>
             {destinations.map(dest => (
               <button
                 key={dest}
-                className="btn"
+                className={`btn group ${destinationFilter === dest ? 'text-white' : 'text-gray-300'}`}
                 style={{ justifyContent: 'space-between', background: destinationFilter === dest ? 'var(--hover-bg)' : 'transparent' }}
                 onClick={() => setDestinationFilter(dest)}
               >
-                <span>{dest}</span>
-                <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>{contacts.filter(c => c.destination === dest).length}</span>
+                <span className="text-gray-200 group-hover:text-white">{dest}</span>
+                <span className="bg-gray-700 text-gray-100 text-xs px-1.5 py-0.5 rounded-full font-medium">
+                  {contacts.filter(c => c.destination === dest).length}
+                </span>
               </button>
             ))}
           </div>
 
-          <div style={{ fontSize: 12, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 10 }}>
+          <div className="text-gray-400 uppercase tracking-wider text-xs" style={{ marginBottom: 10 }}>
             Type
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {(['all', ...TYPES] as const).map(type => (
               <button
                 key={type}
-                className="btn"
+                className={`btn group ${typeFilter === type ? 'text-white' : 'text-gray-300'}`}
                 style={{
                   justifyContent: 'space-between',
                   background: typeFilter === type ? 'var(--hover-bg)' : 'transparent',
                 }}
                 onClick={() => setTypeFilter(type)}
               >
-                <span>{type === 'all' ? 'All types' : titleCase(type)}</span>
-                <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>
+                <span className="text-gray-200 group-hover:text-white">{type === 'all' ? 'All types' : titleCase(type)}</span>
+                <span className="bg-gray-700 text-gray-100 text-xs px-1.5 py-0.5 rounded-full font-medium">
                   {type === 'all' ? contacts.length : contacts.filter(c => c.type === type).length}
                 </span>
               </button>
@@ -243,13 +247,14 @@ export default function FieldContactsPage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <div>
             <div className="page-title">Field Contacts</div>
-            <div className="muted" style={{ fontSize: 12 }}>Fixers, hotels, and creators pipeline</div>
+            <div className="muted" style={{ fontSize: 12, color: '#d1d5db' }}>Fixers, hotels, and creators pipeline</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <select
               value={destinationFilter}
               onChange={e => setDestinationFilter(e.target.value)}
-              style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: 8, padding: '6px 10px', fontSize: 12 }}
+              className="bg-gray-700 border border-gray-500 text-gray-100"
+              style={{ borderRadius: 8, padding: '6px 10px', fontSize: 12 }}
             >
               <option value="all">All destinations</option>
               {destinations.map(dest => (
@@ -287,17 +292,20 @@ export default function FieldContactsPage() {
               onDrop={() => handleDrop(stage.key)}
             >
               <div className="col-header">
-                <span className="col-dot" style={{ background: stage.color }} />
-                {stage.label}
-                <span className="col-count">{stageCounts[stage.key] || 0}</span>
+                <span className="col-dot" style={{ background: stage.color, width: 12, height: 12 }} />
+                <span className="text-gray-100 font-semibold">{stage.label}</span>
+                <span className="col-count bg-gray-700 text-white px-2 py-0.5 rounded-full text-xs font-bold">
+                  {stageCounts[stage.key] || 0}
+                </span>
               </div>
-              <div className="col-cards">
+              <div className="col-cards" style={{ gap: 12 }}>
                 {filtered
                   .filter(c => c.stage === stage.key)
                   .map(contact => (
                     <div
                       key={contact.id}
                       className="task-card"
+                      style={{ padding: 16 }}
                       draggable
                       onDragStart={() => setDragging(contact.id)}
                       onDragEnd={() => setDragging(null)}
@@ -320,13 +328,13 @@ export default function FieldContactsPage() {
                               href={formatWaLink(contact.wa)}
                               target="_blank"
                               rel="noreferrer"
-                              style={{ color: 'var(--text-dim)' }}
+                              className="text-gray-300 hover:text-white"
                             >
                               <MessageCircle size={14} />
                             </a>
                           )}
                           {contact.email && (
-                            <a href={`mailto:${contact.email}`} style={{ color: 'var(--text-dim)' }}>
+                            <a href={`mailto:${contact.email}`} className="text-gray-300 hover:text-white">
                               <Mail size={14} />
                             </a>
                           )}
@@ -335,7 +343,7 @@ export default function FieldContactsPage() {
                               href={`https://instagram.com/${contact.instagram.replace('@', '')}`}
                               target="_blank"
                               rel="noreferrer"
-                              style={{ color: 'var(--text-dim)' }}
+                              className="text-gray-300 hover:text-white"
                             >
                               <Instagram size={14} />
                             </a>
@@ -345,26 +353,13 @@ export default function FieldContactsPage() {
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
                         <span
-                          style={{
-                            ...getDestinationColor(contact.destination),
-                            padding: '2px 8px',
-                            borderRadius: 999,
-                            fontSize: 10,
-                            fontWeight: 600,
-                          }}
+                          className="bg-gray-600 text-gray-100 border border-gray-500"
+                          style={{ padding: '2px 8px', borderRadius: 999, fontSize: 10, fontWeight: 600 }}
                         >
                           {contact.destination}
                         </span>
                         <span
-                          style={{
-                            padding: '2px 6px',
-                            borderRadius: 6,
-                            fontSize: 10,
-                            fontWeight: 600,
-                            textTransform: 'uppercase',
-                            border: `1px solid ${TYPE_COLORS[contact.type]}`,
-                            color: TYPE_COLORS[contact.type],
-                          }}
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase ${TYPE_BADGE_CLASSES[contact.type]}`}
                         >
                           {contact.type}
                         </span>
