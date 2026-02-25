@@ -243,7 +243,7 @@ export default function HiringPage() {
         </div>
 
         {/* Cards */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minHeight: 40, flex: 1 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minHeight: 40, flex: 1, overflowY: 'auto' }}>
           {stageApps.map(app => {
             const days = daysInStage(app.updated_at);
             return (
