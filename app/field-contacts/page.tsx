@@ -190,51 +190,52 @@ export default function FieldContactsPage() {
     <div style={{ display: 'flex', gap: 16, height: 'calc(100vh - 48px)' }}>
       <aside style={{ width: 240, flexShrink: 0 }}>
         <div className="panel" style={{ height: '100%', overflow: 'auto' }}>
-          <div className="text-gray-400 uppercase tracking-wider text-xs" style={{ marginBottom: 10 }}>
+          <div style={{ fontSize: 11, color: '#8b949e', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, fontWeight: 600 }}>
             Destinations
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 18 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 18 }}>
             <button
-              className={`btn group ${destinationFilter === 'all' ? 'text-white' : 'text-gray-300'}`}
-              style={{ justifyContent: 'space-between', background: destinationFilter === 'all' ? 'var(--hover-bg)' : 'transparent' }}
+              className="btn"
+              style={{ justifyContent: 'space-between', background: destinationFilter === 'all' ? 'var(--hover-bg)' : 'transparent', color: destinationFilter === 'all' ? '#ffffff' : '#c9d1d9' }}
               onClick={() => setDestinationFilter('all')}
             >
-              <span className="text-gray-200 group-hover:text-white">All destinations</span>
-              <span className="bg-gray-700 text-gray-100 text-xs px-1.5 py-0.5 rounded-full font-medium">
+              <span>All destinations</span>
+              <span style={{ background: '#30363d', color: '#e6edf3', fontSize: 10, padding: '1px 6px', borderRadius: 999, fontWeight: 600 }}>
                 {contacts.length}
               </span>
             </button>
             {destinations.map(dest => (
               <button
                 key={dest}
-                className={`btn group ${destinationFilter === dest ? 'text-white' : 'text-gray-300'}`}
-                style={{ justifyContent: 'space-between', background: destinationFilter === dest ? 'var(--hover-bg)' : 'transparent' }}
+                className="btn"
+                style={{ justifyContent: 'space-between', background: destinationFilter === dest ? 'var(--hover-bg)' : 'transparent', color: destinationFilter === dest ? '#ffffff' : '#c9d1d9' }}
                 onClick={() => setDestinationFilter(dest)}
               >
-                <span className="text-gray-200 group-hover:text-white">{dest}</span>
-                <span className="bg-gray-700 text-gray-100 text-xs px-1.5 py-0.5 rounded-full font-medium">
+                <span>{dest}</span>
+                <span style={{ background: '#30363d', color: '#e6edf3', fontSize: 10, padding: '1px 6px', borderRadius: 999, fontWeight: 600 }}>
                   {contacts.filter(c => c.destination === dest).length}
                 </span>
               </button>
             ))}
           </div>
 
-          <div className="text-gray-400 uppercase tracking-wider text-xs" style={{ marginBottom: 10 }}>
+          <div style={{ fontSize: 11, color: '#8b949e', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, fontWeight: 600 }}>
             Type
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {(['all', ...TYPES] as const).map(type => (
               <button
                 key={type}
-                className={`btn group ${typeFilter === type ? 'text-white' : 'text-gray-300'}`}
+                className="btn"
                 style={{
                   justifyContent: 'space-between',
                   background: typeFilter === type ? 'var(--hover-bg)' : 'transparent',
+                  color: typeFilter === type ? '#ffffff' : '#c9d1d9',
                 }}
                 onClick={() => setTypeFilter(type)}
               >
-                <span className="text-gray-200 group-hover:text-white">{type === 'all' ? 'All types' : titleCase(type)}</span>
-                <span className="bg-gray-700 text-gray-100 text-xs px-1.5 py-0.5 rounded-full font-medium">
+                <span>{type === 'all' ? 'All types' : titleCase(type)}</span>
+                <span style={{ background: '#30363d', color: '#e6edf3', fontSize: 10, padding: '1px 6px', borderRadius: 999, fontWeight: 600 }}>
                   {type === 'all' ? contacts.length : contacts.filter(c => c.type === type).length}
                 </span>
               </button>
