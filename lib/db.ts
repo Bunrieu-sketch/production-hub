@@ -314,7 +314,119 @@ function initDb() {
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
     );
+
+    -- ── Mission Control ────────────────────────────────────────────────
+    CREATE TABLE IF NOT EXISTS mc_agents (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      codename TEXT,
+      role TEXT NOT NULL,
+      role_type TEXT DEFAULT "SPC" CHECK(role_type IN ("LEAD", "INT", "SPC")),
+      status TEXT DEFAULT "idle" CHECK(status IN ("idle", "working", "blocked", "offline")),
+      current_task_id INTEGER REFERENCES mc_tasks(id),
+      session_key TEXT,
+      avatar_color TEXT DEFAULT "#10b981",
+      avatar_icon TEXT DEFAULT "bot",
+      last_heartbeat TEXT,
+      created_at TEXT DEFAULT (datetime("now"))
+    );
+
+    CREATE TABLE IF NOT EXISTS mc_tasks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      description TEXT,
+      status TEXT DEFAULT "inbox" CHECK(status IN ("inbox", "assigned", "in_progress", "review", "done")),
+      priority TEXT DEFAULT "normal" CHECK(priority IN ("low", "normal", "high", "urgent")),
+      assignee_ids TEXT DEFAULT "[]",
+      tags TEXT DEFAULT "[]",
+      created_by TEXT REFERENCES mc_agents(id),
+      created_at TEXT DEFAULT (datetime("now")),
+      updated_at TEXT DEFAULT (datetime("now"))
+    );
+
+    CREATE TABLE IF NOT EXISTS mc_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      task_id INTEGER REFERENCES mc_tasks(id),
+      from_agent_id TEXT REFERENCES mc_agents(id),
+      content TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime("now"))
+    );
+
+    CREATE TABLE IF NOT EXISTS mc_activities (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      type TEXT NOT NULL,
+      agent_id TEXT REFERENCES mc_agents(id),
+      message TEXT NOT NULL,
+      task_id INTEGER REFERENCES mc_tasks(id),
+      created_at TEXT DEFAULT (datetime("now"))
+    );
+
+    CREATE TABLE IF NOT EXISTS mc_documents (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      content TEXT,
+      type TEXT DEFAULT "deliverable" CHECK(type IN ("deliverable", "research", "protocol", "brief", "other")),
+      task_id INTEGER REFERENCES mc_tasks(id),
+      agent_id TEXT REFERENCES mc_agents(id),
+      created_at TEXT DEFAULT (datetime("now"))
+    );
+
+    CREATE TABLE IF NOT EXISTS mc_notifications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      mentioned_agent_id TEXT REFERENCES mc_agents(id),
+      content TEXT NOT NULL,
+      delivered INTEGER DEFAULT 0,
+      task_id INTEGER REFERENCES mc_tasks(id),
+      from_agent_id TEXT REFERENCES mc_agents(id),
+      created_at TEXT DEFAULT (datetime("now"))
+    );
   `);
+
+  const seedAgent = db.prepare(`
+    INSERT OR IGNORE INTO mc_agents
+      (id, name, codename, role, role_type, avatar_color, avatar_icon, session_key)
+    VALUES
+      (@id, @name, @codename, @role, @role_type, @avatar_color, @avatar_icon, @session_key)
+  `);
+
+  const seedAgents = [
+    {
+      id: 'monty',
+      name: 'Monty',
+      codename: null,
+      role: 'Chief of Staff',
+      role_type: 'LEAD',
+      avatar_color: '#f59e0b',
+      avatar_icon: 'crown',
+      session_key: 'agent:main:main',
+    },
+    {
+      id: 'scout',
+      name: 'Scout',
+      codename: null,
+      role: 'Hiring Coordinator',
+      role_type: 'SPC',
+      avatar_color: '#10b981',
+      avatar_icon: 'search',
+      session_key: 'agent:scout:main',
+    },
+    {
+      id: 'ray',
+      name: 'Ray',
+      codename: 'Radar',
+      role: 'Pre-Production Lead',
+      role_type: 'SPC',
+      avatar_color: '#6366f1',
+      avatar_icon: 'radar',
+      session_key: 'agent:ray:main',
+    },
+  ];
+
+  const seedAgentsTx = db.transaction(() => {
+    for (const agent of seedAgents) seedAgent.run(agent);
+  });
+
+  seedAgentsTx();
 
   migrateEpisodesSchema();
   migrateSeriesSchema();

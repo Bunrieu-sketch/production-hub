@@ -7,7 +7,7 @@ import {
   LayoutGrid, Kanban, FileText, Search, Palette,
   GanttChart, Calendar, Clapperboard, Video, Route,
   HandCoins, Users, UserPlus, ChevronDown, ChevronRight,
-  ExternalLink, ShieldCheck, Gavel, FolderOpen, BarChart3,
+  ExternalLink, ShieldCheck, Gavel, FolderOpen, BarChart3, Monitor,
 } from 'lucide-react';
 
 interface NavSection {
@@ -78,6 +78,11 @@ export function Sidebar() {
       <Link href="/" className={`nav-item ${pathname === '/' ? 'active' : ''}`}>
         <Kanban size={18} />
         <span>Tasks</span>
+      </Link>
+
+      <Link href="/mission-control" className={`nav-item ${isActive('/mission-control') ? 'active' : ''}`}>
+        <Monitor size={18} />
+        <span>Mission Control</span>
       </Link>
 
       {/* Collapsible sections */}
