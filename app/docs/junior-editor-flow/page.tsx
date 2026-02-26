@@ -58,7 +58,9 @@ export default function JuniorEditorFlowPage() {
           <p style={{ margin: '0 0 8px' }}><strong>48h no reply:</strong> One follow-up. <strong>7 days total silence:</strong> Auto-rejected.</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#58a6ff', fontSize: 11, fontWeight: 600 }}><Bot size={12} /> Automated</div>
         </div>
+
         <div style={{ marginTop: 12, background: 'var(--bg)', borderRadius: 8, padding: 12, fontFamily: 'monospace', fontSize: 12, color: 'var(--text-dim)', whiteSpace: 'pre-wrap' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: 0.5, marginBottom: 6 }}>INITIAL OUTREACH</div>
 {`Subject: Junior Video Editor (YouTube) — Work Samples
 
 Hey [First Name],
@@ -68,6 +70,30 @@ Thanks for applying. Before we go any further, we'd like to see your work.
 Send us your best piece of long-form or documentary editing. Failing that, the short you think best reflects your storytelling in an edit.
 
 A link is fine — YouTube, Vimeo, Drive, whatever you have.
+
+Monty`}
+        </div>
+        <div style={{ marginTop: 8, background: 'var(--bg)', borderRadius: 8, padding: 12, fontFamily: 'monospace', fontSize: 12, color: 'var(--text-dim)', whiteSpace: 'pre-wrap' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: 0.5, marginBottom: 6 }}>FOLLOW-UP (48h no reply)</div>
+{`Subject: Re: Junior Video Editor (YouTube) — Work Samples
+
+Hey [First Name],
+
+Just following up — do you have any editing work you could share?
+
+Doesn't need to be a full reel. Even one video you've worked on is fine.
+
+Monty`}
+        </div>
+        <div style={{ marginTop: 8, background: 'var(--bg)', borderRadius: 8, padding: 12, fontFamily: 'monospace', fontSize: 12, color: 'var(--text-dim)', whiteSpace: 'pre-wrap' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: 0.5, marginBottom: 6 }}>NO RESPONSE CLOSE-OUT (7 days)</div>
+{`Subject: Re: Junior Video Editor (YouTube) — Work Samples
+
+Hey [First Name],
+
+We haven't heard back so we're going to close your application for now.
+
+If you'd like to be considered in the future, feel free to reach out.
 
 Monty`}
         </div>
@@ -86,6 +112,18 @@ Monty`}
           <p style={{ margin: '0 0 8px' }}>Click the card → opens to the grading tab. Shows <strong>Submitted Work</strong> and <strong>Initial Application</strong> links separately.</p>
           <p style={{ margin: '0 0 8px' }}>Score 1–10. <strong>≥ 4 → auto-promotes to Interview. &lt; 4 → auto-rejects.</strong></p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#d29922', fontSize: 11, fontWeight: 600 }}><User size={12} /> Andrew grades</div>
+        </div>
+        <div style={{ marginTop: 12, background: 'var(--bg)', borderRadius: 8, padding: 12, fontFamily: 'monospace', fontSize: 12, color: 'var(--text-dim)', whiteSpace: 'pre-wrap' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: 0.5, marginBottom: 6 }}>REJECTION (score &lt; 4)</div>
+{`Subject: Junior Video Editor (YouTube) — Application Update
+
+Hi [First Name],
+
+Thanks for sending your work through. We've reviewed it and we're going to pass at this stage.
+
+We'll keep your details on file.
+
+Monty`}
         </div>
       </div>
 
