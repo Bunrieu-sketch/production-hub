@@ -53,6 +53,7 @@ export default function EditorHiringPage() {
   const [showNewApplicant, setShowNewApplicant] = useState(false);
   const [dragging, setDragging] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState<string | null>(null);
+  const [showRejected, setShowRejected] = useState(false);
 
   const loadApplicants = useCallback(() => {
     fetch('/api/hiring/applicants?role_type=editor').then(r => r.json()).then(setApplicants);
@@ -180,30 +181,86 @@ export default function EditorHiringPage() {
           <h1 style={{ fontSize: 22, fontWeight: 600 }}>Junior Video Editor Hiring</h1>
           <a href="/docs/junior-editor-flow" target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#fff', textDecoration: 'none', padding: '5px 12px', borderRadius: 6, background: '#7c3aed', fontWeight: 600, display: 'inline-block' }}>📋 Flow</a>
         </div>
-        <button className="btn btn-secondary" onClick={() => setShowNewApplicant(true)}>
-          <Plus size={14} /> Applicant
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => setShowRejected(v => !v)}
+            style={{ color: showRejected ? '#f85149' : undefined, borderColor: showRejected ? '#f85149' : undefined }}
+          >
+            {showRejected ? '✕ Hide Rejected' : `🗑 Rejected (${applicants.filter(a => a.stage === 'rejected').length})`}
+          </button>
+          <button className="btn btn-secondary" onClick={() => setShowNewApplicant(true)}>
+            <Plus size={14} /> Applicant
+          </button>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 10, overflowX: 'auto', flex: 1, paddingBottom: 16, minHeight: 0, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', gap: 10, overflowX: 'auto', flex: 1, paddingBottom: 16, minHeight: 0 }}>
         {STAGES.map(renderColumn)}
+        {/* Rejected — drop target always, expands to show cards when toggled */}
         <div
           className="kanban-col"
           style={{
-            minWidth: 44, maxWidth: 44, flex: '0 0 44px',
+            minWidth: showRejected ? 220 : 44,
+            maxWidth: showRejected ? 260 : 44,
+            flex: showRejected ? '0 0 240px' : '0 0 44px',
             background: dragOver === 'rejected' ? 'rgba(248,81,73,0.05)' : 'var(--card)',
-            borderColor: dragOver === 'rejected' ? '#f85149' : 'var(--border)',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-            padding: '12px 10px', cursor: 'pointer',
+            borderColor: dragOver === 'rejected' ? '#f85149' : showRejected ? '#f8514940' : 'var(--border)',
+            transition: 'all 0.2s',
+            display: 'flex', flexDirection: 'column',
+            padding: showRejected ? undefined : '12px 10px',
+            alignItems: showRejected ? undefined : 'center',
+            gap: showRejected ? undefined : 6,
           }}
           onDragOver={(e) => { e.preventDefault(); setDragOver('rejected'); }}
           onDragLeave={() => setDragOver(null)}
           onDrop={() => handleDrop('rejected')}
         >
-          <span style={{ writingMode: 'vertical-rl', fontSize: 10, fontWeight: 600, color: '#f85149', letterSpacing: 0.5 }}>REJECTED</span>
-          <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 5px', borderRadius: 8, background: '#f8514918', color: '#f85149' }}>
-            {applicants.filter(a => a.stage === 'rejected').length}
-          </span>
+          {showRejected ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#f85149', flexShrink: 0 }} />
+                  <span style={{ fontSize: 11, fontWeight: 600, color: '#f85149', letterSpacing: 0.3 }}>REJECTED</span>
+                </div>
+                <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 10, background: '#f8514918', color: '#f85149' }}>
+                  {applicants.filter(a => a.stage === 'rejected').length}
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, overflowY: 'auto' }}>
+                {applicants.filter(a => a.stage === 'rejected').map(app => (
+                  <div
+                    key={app.id}
+                    draggable
+                    onDragStart={() => setDragging(app.id)}
+                    onDragEnd={() => { setDragging(null); setDragOver(null); }}
+                    onClick={() => { if (dragging === null) setSelectedApplicantId(app.id); }}
+                    style={{
+                      background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8,
+                      padding: '8px 10px', cursor: 'pointer', opacity: dragging === app.id ? 0.5 : 1,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                      <GripVertical size={12} style={{ color: 'var(--text-dim)', opacity: 0.5 }} />
+                      <span style={{ fontSize: 12, fontWeight: 500, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {app.name}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 10, color: 'var(--text-dim)', paddingLeft: 18 }}>
+                      Tap to restore
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <span style={{ writingMode: 'vertical-rl', fontSize: 10, fontWeight: 600, color: '#f85149', letterSpacing: 0.5 }}>REJECTED</span>
+              <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 5px', borderRadius: 8, background: '#f8514918', color: '#f85149' }}>
+                {applicants.filter(a => a.stage === 'rejected').length}
+              </span>
+            </>
+          )}
         </div>
       </div>
 
