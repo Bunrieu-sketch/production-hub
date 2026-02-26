@@ -86,17 +86,9 @@ Doesn't need to be a full reel. Even one video you've worked on is fine.
 
 Monty`}
         </div>
-        <div style={{ marginTop: 8, background: 'var(--bg)', borderRadius: 8, padding: 12, fontFamily: 'monospace', fontSize: 12, color: 'var(--text-dim)', whiteSpace: 'pre-wrap' }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: 0.5, marginBottom: 6 }}>NO RESPONSE CLOSE-OUT (7 days)</div>
-{`Subject: Re: Junior Video Editor (YouTube) — Work Samples
-
-Hey [First Name],
-
-We haven't heard back so we're going to close your application for now.
-
-If you'd like to be considered in the future, feel free to reach out.
-
-Monty`}
+        <div style={{ marginTop: 8, padding: '10px 12px', background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--border)', fontSize: 12, color: 'var(--text-dim)' }}>
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.5 }}>7 DAYS NO REPLY</span>
+          {' '}— Silent auto-reject. No email sent. Moved to Rejected in the pipeline.
         </div>
       </div>
 
