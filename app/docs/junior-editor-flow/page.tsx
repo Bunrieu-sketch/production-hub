@@ -63,14 +63,15 @@ export default function JuniorEditorFlowPage() {
           <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: 0.5, marginBottom: 6 }}>INITIAL OUTREACH</div>
 {`Subject: Junior Video Editor (YouTube) — Work Samples
 
-Hey [First Name],
+Hi [First Name],
 
-Thanks for applying. Before we go any further, we'd like to see your work.
+Thanks for applying. We've got a lot of applications, so we'd really love to see your best piece of work.
 
-Send us your best piece of long-form or documentary editing. Failing that, the short you think best reflects your storytelling in an edit.
+Could you please send us a link to your best piece of long-form or documentary editing? If you don't have that, the short work you think best reflects your storytelling in an edit.
 
 A link is fine — YouTube, Vimeo, Drive, whatever you have.
 
+Thanks,
 Monty`}
         </div>
         <div style={{ marginTop: 8, background: 'var(--bg)', borderRadius: 8, padding: 12, fontFamily: 'monospace', fontSize: 12, color: 'var(--text-dim)', whiteSpace: 'pre-wrap' }}>
