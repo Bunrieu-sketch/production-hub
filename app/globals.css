@@ -420,6 +420,10 @@ textarea {
   overflow: auto;
 }
 
+.kanban.kanban-5 {
+  grid-template-columns: repeat(5, 1fr);
+}
+
 .kanban-col {
   background: var(--card);
   border: 1px solid var(--border);
@@ -478,6 +482,68 @@ textarea {
   gap: 8px;
   overflow-y: auto;
   flex: 1;
+}
+
+/* Scheduled Column */
+.scheduled-col {
+  border-color: rgba(45, 212, 191, 0.25);
+}
+
+.scheduled-header {
+  color: #2dd4bf !important;
+}
+
+.col-dot.scheduled {
+  background: #2dd4bf;
+}
+
+.scheduled-card {
+  cursor: default !important;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.scheduled-card:hover {
+  border-color: rgba(45, 212, 191, 0.4);
+}
+
+.scheduled-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.agent-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 8px;
+  border-radius: 10px;
+  width: fit-content;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.scheduled-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.scheduled-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.error-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--red);
+  background: rgba(248, 81, 73, 0.12);
+  padding: 1px 6px;
+  border-radius: 8px;
+  margin-left: auto;
 }
 
 /* Task Card */
