@@ -99,9 +99,11 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
   useEffect(() => {
     fetch(`/api/hiring/applicants/${applicantId}`).then(r => r.json()).then(data => {
       setApp(data);
-      // Reset tab based on role type and stage
-      if (data?.role_type === 'editor' && (data?.stage === 'trial_sent' || data?.stage === 'evaluation')) {
-        setTab('trial'); // Portfolio Received / Review → open straight to trial/grading tab
+      // Open to the most useful tab based on current stage
+      if (data?.stage === 'interview') {
+        setTab('interview'); // Always open to interview tab when at interview stage
+      } else if (data?.role_type === 'editor' && (data?.stage === 'trial_sent' || data?.stage === 'evaluation')) {
+        setTab('trial');
       } else if (data?.stage === 'evaluation') {
         setTab('trial');
       } else if (data?.role_type === 'editor') {
@@ -421,68 +423,84 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
 
           {tab === 'interview' && (
             <>
-              {/* Invite button — prominent at top */}
-              <div style={{ marginBottom: 16, padding: 14, background: 'var(--bg)', borderRadius: 10, border: `1px solid ${inviteAlreadySent ? 'var(--border)' : 'var(--accent)'}` }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: inviteAlreadySent ? 'var(--text-dim)' : 'var(--text)' }}>
-                      {inviteAlreadySent ? '✅ Interview invite sent' : '📅 Interview invite not sent yet'}
+              {/* Invite status */}
+              <div style={{ marginBottom: 16, padding: 12, background: 'var(--bg)', borderRadius: 8, border: `1px solid ${inviteAlreadySent ? 'var(--border)' : 'var(--accent)'}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: inviteAlreadySent ? 'var(--text-dim)' : 'var(--text)' }}>
+                    {inviteAlreadySent ? '✅ Invite sent' : '📅 Invite not sent yet'}
+                  </div>
+                  {!app?.email && <div style={{ fontSize: 10, color: 'var(--red)', marginTop: 1 }}>No email on file</div>}
+                </div>
+                {!inviteAlreadySent && app?.email && (
+                  <button onClick={sendInvite} disabled={sendingInvite}
+                    style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid var(--accent)', background: 'var(--accent)', color: 'white', fontSize: 11, fontWeight: 600, cursor: sendingInvite ? 'not-allowed' : 'pointer', opacity: sendingInvite ? 0.6 : 1 }}>
+                    {sendingInvite ? 'Sending...' : 'Send Invite'}
+                  </button>
+                )}
+              </div>
+
+              {/* 1-10 Interview Score — front and centre */}
+              <div className="form-group">
+                <label className="form-label" style={{ fontSize: 13, fontWeight: 700 }}>Interview Score (1–10)</label>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  {[1,2,3,4,5,6,7,8,9,10].map(n => {
+                    const cur = getScoreValue('overall_rating');
+                    return (
+                      <button key={n} type="button"
+                        onClick={() => update('overall_rating', n === cur ? 0 : n)}
+                        style={{
+                          width: 34, height: 34, borderRadius: 7, border: '1px solid var(--border)',
+                          background: n <= cur
+                            ? cur >= 7 ? '#3fb950' : cur >= 4 ? '#d29922' : '#f85149'
+                            : 'var(--bg)',
+                          color: n <= cur ? 'white' : 'var(--text-dim)',
+                          fontWeight: 700, fontSize: 12, cursor: 'pointer', transition: 'all 0.12s',
+                        }}>{n}</button>
+                    );
+                  })}
+                </div>
+                <div style={{ marginTop: 5, fontSize: 11, color: 'var(--text-dim)' }}>
+                  🟢 7–10 strong &nbsp;·&nbsp; 🟡 4–6 okay &nbsp;·&nbsp; 🔴 1–3 pass
+                </div>
+              </div>
+
+              {/* Notes — big, for typing during the call */}
+              <div className="form-group">
+                <label className="form-label" style={{ fontSize: 13, fontWeight: 700 }}>Notes</label>
+                <textarea
+                  value={app.interview_notes}
+                  onChange={e => update('interview_notes', e.target.value)}
+                  rows={8}
+                  placeholder="Type notes during the interview..."
+                  style={{ fontSize: 13, lineHeight: 1.6 }}
+                />
+              </div>
+
+              {/* Secondary details — collapsed */}
+              <details style={{ marginTop: 4 }}>
+                <summary style={{ fontSize: 11, color: 'var(--text-dim)', cursor: 'pointer', marginBottom: 8 }}>More detail (ratings + date)</summary>
+                <div className="form-group">
+                  <label className="form-label">Interview Date</label>
+                  <input type="date" value={app.interview_date || ''} onChange={e => update('interview_date', e.target.value)} />
+                </div>
+                <div style={{ padding: 12, background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-dim)', marginBottom: 10 }}>DETAILED RATINGS</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Communication</span>
+                      <RatingStars value={app.communication_rating} onChange={v => update('communication_rating', v)} />
                     </div>
-                    {!inviteAlreadySent && app?.email && (
-                      <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>{app.email}</div>
-                    )}
-                    {!app?.email && (
-                      <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 2 }}>No email on file — can't send</div>
-                    )}
-                  </div>
-                  {!inviteAlreadySent && app?.email && (
-                    <button
-                      onClick={sendInvite}
-                      disabled={sendingInvite}
-                      style={{
-                        padding: '7px 14px', borderRadius: 8, border: '1px solid var(--accent)',
-                        background: 'var(--accent)', color: 'white', fontSize: 12, fontWeight: 600,
-                        cursor: sendingInvite ? 'not-allowed' : 'pointer', opacity: sendingInvite ? 0.6 : 1,
-                      }}
-                    >
-                      {sendingInvite ? 'Sending...' : 'Send Invite'}
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Interview Date</label>
-                <input type="date" value={app.interview_date || ''} onChange={e => update('interview_date', e.target.value)} />
-              </div>
-
-              {/* Ratings */}
-              <div style={{ marginTop: 4, marginBottom: 12, padding: 12, background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', marginBottom: 10 }}>RATINGS</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Overall</span>
-                    <RatingStars value={app.overall_rating} onChange={v => update('overall_rating', v)} />
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Communication</span>
-                    <RatingStars value={app.communication_rating} onChange={v => update('communication_rating', v)} />
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Attitude</span>
-                    <RatingStars value={app.attitude_rating} onChange={v => update('attitude_rating', v)} />
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Motivation</span>
-                    <RatingStars value={app.motivation_rating} onChange={v => update('motivation_rating', v)} />
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Attitude</span>
+                      <RatingStars value={app.attitude_rating} onChange={v => update('attitude_rating', v)} />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Motivation</span>
+                      <RatingStars value={app.motivation_rating} onChange={v => update('motivation_rating', v)} />
+                    </div>
                   </div>
                 </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Interview Notes</label>
-                <textarea value={app.interview_notes} onChange={e => update('interview_notes', e.target.value)} rows={6} placeholder="Notes from interview..." />
-              </div>
+              </details>
             </>
           )}
 
