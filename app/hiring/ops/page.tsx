@@ -15,6 +15,7 @@ interface Applicant {
   stage: string;
   screening_score: number;
   trial_task_score: number;
+  overall_rating: number;
   screening_notes: string;
   trial_task_notes: string;
   desired_salary: string;
@@ -154,16 +155,28 @@ export default function OpsHiringPage() {
                 </div>
 
                 {(() => {
-                  const score = typeof app.trial_task_score === 'string' ? parseInt(app.trial_task_score, 10) || 0 : app.trial_task_score || 0;
-                  return score > 0 ? (
+                  const trialScore = typeof app.trial_task_score === 'string' ? parseInt(app.trial_task_score, 10) || 0 : app.trial_task_score || 0;
+                  const interviewScore = typeof app.overall_rating === 'string' ? parseInt(app.overall_rating, 10) || 0 : app.overall_rating || 0;
+                  return (trialScore > 0 || interviewScore > 0) ? (
                     <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <span style={{
-                        fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 6,
-                        background: score >= 7 ? '#3fb95025' : score >= 4 ? '#d2992225' : '#f8514925',
-                        color: score >= 7 ? '#3fb950' : score >= 4 ? '#d29922' : '#f85149',
-                      }}>
-                        {score}/10
-                      </span>
+                      {trialScore > 0 && (
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 6,
+                          background: trialScore >= 7 ? '#3fb95025' : trialScore >= 4 ? '#d2992225' : '#f8514925',
+                          color: trialScore >= 7 ? '#3fb950' : trialScore >= 4 ? '#d29922' : '#f85149',
+                        }}>
+                          Trial {trialScore}/10
+                        </span>
+                      )}
+                      {interviewScore > 0 && (
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 6,
+                          background: interviewScore >= 7 ? '#3fb95025' : interviewScore >= 4 ? '#d2992225' : '#f8514925',
+                          color: interviewScore >= 7 ? '#3fb950' : interviewScore >= 4 ? '#d29922' : '#f85149',
+                        }}>
+                          ★ {interviewScore}/10
+                        </span>
+                      )}
                     </div>
                   ) : null;
                 })()}
