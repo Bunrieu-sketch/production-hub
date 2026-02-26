@@ -139,11 +139,12 @@ Monty`}
 
 Hi [First Name],
 
-We've reviewed your portfolio and we'd like to move forward to interview.
+We quite liked the look of your work and we'd like to move forward with an interview.
 
-Book a 15-minute slot with Andrew here:
+Could you please book a 15-minute time slot with Andrew here:
 https://calendar.app.google/4bSX3LMkYXo8XV6N9
 
+Thanks,
 Monty`}
         </div>
       </div>

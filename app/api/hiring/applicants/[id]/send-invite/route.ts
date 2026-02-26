@@ -22,11 +22,12 @@ function buildEmailBody(name: string, roleType: string): string {
   if (roleType === 'editor') {
     return `Hi ${firstName},
 
-We've reviewed your portfolio and we'd like to move forward to interview.
+We quite liked the look of your work and we'd like to move forward with an interview.
 
-Book a 15-minute slot with Andrew here:
+Could you please book a 15-minute time slot with Andrew here:
 ${BOOKING_LINK}
 
+Thanks,
 Monty`;
   } else {
     return `Hi ${firstName},
