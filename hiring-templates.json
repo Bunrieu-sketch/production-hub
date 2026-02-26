@@ -1,0 +1,46 @@
+{
+  "contentOps": {
+    "initialOjpMessage": {
+      "body": "Hey [First Name],\n\nThanks for getting in touch about the Content Operations Manager role. I checked out your profile and your background looks interesting.\n\nI've got a short trial task that takes about 30 minutes. It's a good way for both of us to figure out if this is the right fit.\n\nIf you're keen, send me an email at montythehandler@gmail.com (cc andrew@fraser.vn) and I'll send you the details.\n\nCheers,\nMonty"
+    },
+    "trialTaskEmail": {
+      "subject": "Content Operations Manager role (YouTube) — trial task",
+      "body": "Hey [First Name],\n\nGood to hear from you. I've attached the trial task as a PDF. Here's the channel so you can get a feel for what we do: https://www.youtube.com/@Andrew_Fraser\n\nShould take about 30 minutes. I'm mainly looking at how you research and how you put things together. There's no right answer, just do it the way you'd naturally approach it.\n\n48 hours would be ideal but let me know if you need more time.\n\nCheers,\nMonty"
+    },
+    "trialTaskFollowUp": {
+      "body": "Hey [First Name], just checking in on the trial task. If you've been busy that's totally fine — let me know either way.\n\nMonty"
+    },
+    "trialTaskRejection": {
+      "subject": "Content Operations Manager role (YouTube) — Application Update",
+      "body": "Hi [First Name],\n\nThanks for putting time into the trial task. We've reviewed it and we're going to pass at this stage.\n\nWe'll keep your details on file.\n\nMonty"
+    },
+    "interviewInvite": {
+      "subject": "Content Operations Manager (YouTube) — Interview",
+      "body": "Hi [First Name],\n\nWe quite liked your trial task and we'd like to move forward with an interview.\n\nCould you please book a 15-minute time slot with Andrew here:\nhttps://calendar.app.google/4bSX3LMkYXo8XV6N9\n\nThanks,\nMonty"
+    },
+    "noResponse7Days": {
+      "note": "Silent auto-reject. No email sent. Move to rejected in DB."
+    }
+  },
+  "videoEditor": {
+    "portfolioRequest": {
+      "subject": "Junior Video Editor (YouTube) — Work Samples",
+      "body": "Hi [First Name],\n\nThanks for applying. We've got a lot of applications, so we'd really love to see your best piece of work.\n\nCould you please send us a link to your best piece of long-form or documentary editing? If you don't have that, the short work you think best reflects your storytelling in an edit.\n\nA link is fine — YouTube, Vimeo, Drive, whatever you have.\n\nThanks,\nMonty"
+    },
+    "portfolioRequestFollowUp": {
+      "subject": "Re: Junior Video Editor (YouTube) — Work Samples",
+      "body": "Hey [First Name],\n\nJust following up — do you have any editing work you could share?\n\nDoesn't need to be a full reel. Even one video you've worked on is fine.\n\nMonty"
+    },
+    "portfolioRejection": {
+      "subject": "Junior Video Editor (YouTube) — Application Update",
+      "body": "Hi [First Name],\n\nThanks for sending your work through. We've reviewed it and we're going to pass at this stage.\n\nWe'll keep your details on file.\n\nMonty"
+    },
+    "interviewInvite": {
+      "subject": "Junior Video Editor (YouTube) — Interview",
+      "body": "Hi [First Name],\n\nWe quite liked the look of your work and we'd like to move forward with an interview.\n\nCould you please book a 15-minute time slot with Andrew here:\nhttps://calendar.app.google/4bSX3LMkYXo8XV6N9\n\nThanks,\nMonty"
+    },
+    "noResponse7Days": {
+      "note": "Silent auto-reject. No email sent. Move to rejected in DB."
+    }
+  }
+}

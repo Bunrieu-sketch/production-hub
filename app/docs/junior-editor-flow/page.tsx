@@ -1,8 +1,52 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Users, Mail, Film, Star, Video, UserCheck, Bot, User, Briefcase } from 'lucide-react';
 
+type HiringTemplates = {
+  videoEditor: {
+    portfolioRequest: { subject: string; body: string };
+    portfolioRequestFollowUp: { subject: string; body: string };
+    portfolioRejection: { subject: string; body: string };
+    interviewInvite: { subject: string; body: string };
+    noResponse7Days: { note: string };
+  };
+};
+
 export default function JuniorEditorFlowPage() {
+  const [templates, setTemplates] = useState<HiringTemplates | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    fetch('/api/hiring/templates')
+      .then((res) => res.json())
+      .then((data: HiringTemplates) => {
+        if (isMounted) {
+          setTemplates(data);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setTemplates(null);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const portfolioRequestSubject = templates?.videoEditor.portfolioRequest.subject;
+  const portfolioRequestBody = templates?.videoEditor.portfolioRequest.body;
+  const portfolioRequestFollowUpSubject = templates?.videoEditor.portfolioRequestFollowUp.subject;
+  const portfolioRequestFollowUpBody = templates?.videoEditor.portfolioRequestFollowUp.body;
+  const portfolioRejectionSubject = templates?.videoEditor.portfolioRejection.subject;
+  const portfolioRejectionBody = templates?.videoEditor.portfolioRejection.body;
+  const interviewInviteSubject = templates?.videoEditor.interviewInvite.subject;
+  const interviewInviteBody = templates?.videoEditor.interviewInvite.body;
+  const noResponse7DaysNote = templates?.videoEditor.noResponse7Days.note;
+
   return (
     <div style={{ padding: 24, maxWidth: 800, margin: '0 auto' }}>
       <div style={{ marginBottom: 32 }}>
@@ -61,34 +105,19 @@ export default function JuniorEditorFlowPage() {
 
         <div style={{ marginTop: 12, background: 'var(--bg)', borderRadius: 8, padding: 12, fontFamily: 'monospace', fontSize: 12, color: 'var(--text-dim)', whiteSpace: 'pre-wrap' }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: 0.5, marginBottom: 6 }}>INITIAL OUTREACH</div>
-{`Subject: Junior Video Editor (YouTube) — Work Samples
-
-Hi [First Name],
-
-Thanks for applying. We've got a lot of applications, so we'd really love to see your best piece of work.
-
-Could you please send us a link to your best piece of long-form or documentary editing? If you don't have that, the short work you think best reflects your storytelling in an edit.
-
-A link is fine — YouTube, Vimeo, Drive, whatever you have.
-
-Thanks,
-Monty`}
+{portfolioRequestSubject && portfolioRequestBody
+            ? `Subject: ${portfolioRequestSubject}\n\n${portfolioRequestBody}`
+            : 'Loading template...'}
         </div>
         <div style={{ marginTop: 8, background: 'var(--bg)', borderRadius: 8, padding: 12, fontFamily: 'monospace', fontSize: 12, color: 'var(--text-dim)', whiteSpace: 'pre-wrap' }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: 0.5, marginBottom: 6 }}>FOLLOW-UP (48h no reply)</div>
-{`Subject: Re: Junior Video Editor (YouTube) — Work Samples
-
-Hey [First Name],
-
-Just following up — do you have any editing work you could share?
-
-Doesn't need to be a full reel. Even one video you've worked on is fine.
-
-Monty`}
+{portfolioRequestFollowUpSubject && portfolioRequestFollowUpBody
+            ? `Subject: ${portfolioRequestFollowUpSubject}\n\n${portfolioRequestFollowUpBody}`
+            : 'Loading template...'}
         </div>
         <div style={{ marginTop: 8, padding: '10px 12px', background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--border)', fontSize: 12, color: 'var(--text-dim)' }}>
           <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.5 }}>7 DAYS NO REPLY</span>
-          {' '}— Silent auto-reject. No email sent. Moved to Rejected in the pipeline.
+          {' '}— {noResponse7DaysNote ?? 'Loading template...'}
         </div>
       </div>
 
@@ -108,15 +137,9 @@ Monty`}
         </div>
         <div style={{ marginTop: 12, background: 'var(--bg)', borderRadius: 8, padding: 12, fontFamily: 'monospace', fontSize: 12, color: 'var(--text-dim)', whiteSpace: 'pre-wrap' }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: 0.5, marginBottom: 6 }}>REJECTION (score &lt; 4)</div>
-{`Subject: Junior Video Editor (YouTube) — Application Update
-
-Hi [First Name],
-
-Thanks for sending your work through. We've reviewed it and we're going to pass at this stage.
-
-We'll keep your details on file.
-
-Monty`}
+{portfolioRejectionSubject && portfolioRejectionBody
+            ? `Subject: ${portfolioRejectionSubject}\n\n${portfolioRejectionBody}`
+            : 'Loading template...'}
         </div>
       </div>
 
@@ -135,17 +158,9 @@ Monty`}
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#d29922', fontSize: 11, fontWeight: 600 }}><User size={12} /> Andrew interviews</div>
         </div>
         <div style={{ marginTop: 12, background: 'var(--bg)', borderRadius: 8, padding: 12, fontFamily: 'monospace', fontSize: 12, color: 'var(--text-dim)', whiteSpace: 'pre-wrap' }}>
-{`Subject: Junior Video Editor (YouTube) — Interview
-
-Hi [First Name],
-
-We quite liked the look of your work and we'd like to move forward with an interview.
-
-Could you please book a 15-minute time slot with Andrew here:
-https://calendar.app.google/4bSX3LMkYXo8XV6N9
-
-Thanks,
-Monty`}
+{interviewInviteSubject && interviewInviteBody
+            ? `Subject: ${interviewInviteSubject}\n\n${interviewInviteBody}`
+            : 'Loading template...'}
         </div>
       </div>
 

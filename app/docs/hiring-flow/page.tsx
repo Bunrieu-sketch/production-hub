@@ -1,8 +1,53 @@
 'use client';
 
-import { Users, Mail, FileText, Zap, Clock, ClipboardCheck, Star, MessageSquare, Video, UserCheck, XCircle, Bot, User } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Users, FileText, Zap, ClipboardCheck, Star, MessageSquare, Video, UserCheck, Bot, User } from 'lucide-react';
+
+type HiringTemplates = {
+  contentOps: {
+    initialOjpMessage: { body: string };
+    trialTaskEmail: { subject: string; body: string };
+    trialTaskFollowUp: { body: string };
+    trialTaskRejection: { subject: string; body: string };
+    interviewInvite: { subject: string; body: string };
+    noResponse7Days: { note: string };
+  };
+};
 
 export default function HiringFlowPage() {
+  const [templates, setTemplates] = useState<HiringTemplates | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    fetch('/api/hiring/templates')
+      .then((res) => res.json())
+      .then((data: HiringTemplates) => {
+        if (isMounted) {
+          setTemplates(data);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setTemplates(null);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const initialOjpBody = templates?.contentOps.initialOjpMessage.body;
+  const trialTaskSubject = templates?.contentOps.trialTaskEmail.subject;
+  const trialTaskBody = templates?.contentOps.trialTaskEmail.body;
+  const trialTaskFollowUp = templates?.contentOps.trialTaskFollowUp.body;
+  const trialTaskRejectionSubject = templates?.contentOps.trialTaskRejection.subject;
+  const trialTaskRejectionBody = templates?.contentOps.trialTaskRejection.body;
+  const interviewInviteSubject = templates?.contentOps.interviewInvite.subject;
+  const interviewInviteBody = templates?.contentOps.interviewInvite.body;
+  const noResponse7DaysNote = templates?.contentOps.noResponse7Days.note;
+
   return (
     <div style={{ padding: 24, maxWidth: 800, margin: '0 auto' }}>
       {/* Header */}
@@ -36,7 +81,7 @@ export default function HiringFlowPage() {
             { stage: 'Trial Sent', desc: 'Emailed the actual trial task brief', color: '#a371f7' },
             { stage: 'Evaluation', desc: 'Trial submitted, being scored', color: 'var(--blue)' },
             { stage: 'Interview', desc: 'Scheduled/completed Google Meet', color: 'var(--orange)' },
-            { stage: 'Hired', desc: 'Paid trial week started', color: 'var(--green)' },
+            { stage: 'Hired', desc: 'Probation — tracking only. No automated actions.', color: 'var(--green)' },
             { stage: 'Rejected', desc: 'Dropped at any stage', color: '#8b949e' },
           ].map(s => (
             <div key={s.stage} style={{
@@ -90,19 +135,7 @@ export default function HiringFlowPage() {
             fontSize: 11, margin: 0, overflow: 'auto', whiteSpace: 'pre-wrap',
             border: '1px solid var(--border)', lineHeight: 1.7
           }}>
-{`Hey [First Name],
-
-Thanks for getting in touch about the Content Operations Manager role. I checked out your profile and your background looks interesting.
-
-I've got a short trial task that takes about 30 minutes. It's a good way for both of us to figure out if this is the right fit.
-
-If you're keen, send me an email at montythehandler@gmail.com (cc andrew@fraser.vn) and I'll send you the details.
-
-Cheers,
-Monty
-Team & Operations
-Andrew Fraser | YouTube
-montythehandler@gmail.com`}
+{initialOjpBody ?? 'Loading template...'}
           </pre>
         </div>
       </section>
@@ -121,21 +154,9 @@ montythehandler@gmail.com`}
             fontSize: 11, margin: 0, overflow: 'auto', whiteSpace: 'pre-wrap',
             border: '1px solid var(--border)', lineHeight: 1.7
           }}>
-{`Subject: Content Operations Manager role (YouTube) — trial task
-
-Hey [First Name],
-
-Good to hear from you. I've attached the trial task as a PDF. Here's the channel so you can get a feel for what we do: https://www.youtube.com/@Andrew_Fraser
-
-Should take about 30 minutes. I'm mainly looking at how you research and how you put things together. There's no right answer, just do it the way you'd naturally approach it.
-
-48 hours would be ideal but let me know if you need more time.
-
-Cheers,
-Monty
-Team & Operations
-Andrew Fraser | YouTube
-montythehandler@gmail.com`}
+{trialTaskSubject && trialTaskBody
+            ? `Subject: ${trialTaskSubject}\n\n${trialTaskBody}`
+            : 'Loading template...'}
           </pre>
 
           <div style={{ fontSize: 12, fontWeight: 600, marginTop: 16, marginBottom: 8 }}>Trial Task (PDF Content)</div>
@@ -217,13 +238,13 @@ montythehandler@gmail.com`}
           <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>Follow-up Messages</div>
 
           <div style={{ marginBottom: 10 }}>
-            <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--orange)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>No submission received</div>
-            <pre style={{
-              background: 'var(--bg)', padding: 10, borderRadius: 6,
-              fontSize: 11, margin: 0, overflow: 'auto', whiteSpace: 'pre-wrap',
-              border: '1px solid var(--border)', lineHeight: 1.6
-            }}>
-{`Hey [First Name], just checking in on the trial task. If you've been busy that's totally fine, I can push the deadline a few days. Let me know either way.`}
+          <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--orange)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>No submission received</div>
+          <pre style={{
+            background: 'var(--bg)', padding: 10, borderRadius: 6,
+            fontSize: 11, margin: 0, overflow: 'auto', whiteSpace: 'pre-wrap',
+            border: '1px solid var(--border)', lineHeight: 1.6
+          }}>
+{trialTaskFollowUp ?? 'Loading template...'}
             </pre>
           </div>
 
@@ -269,18 +290,9 @@ montythehandler@gmail.com`}
             fontSize: 11, margin: 0, overflow: 'auto', whiteSpace: 'pre-wrap',
             border: '1px solid var(--border)', lineHeight: 1.7
           }}>
-{`Subject: Content Operations Manager role (YouTube) — quick video chat
-
-Hey [First Name],
-
-Your trial task was really good. I'd like to do a quick video call so we can talk a bit more about the role and I can get to know you better.
-
-Would any of these times work for a 20-30 min Google Meet?
-- [Time 1]
-- [Time 2]
-- [Time 3]
-
-If not, just tell me what works for you and we'll sort something out.`}
+{interviewInviteSubject && interviewInviteBody
+            ? `Subject: ${interviewInviteSubject}\n\n${interviewInviteBody}`
+            : 'Loading template...'}
           </pre>
         </div>
       </section>
