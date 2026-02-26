@@ -94,6 +94,7 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
   const [app, setApp] = useState<Applicant | null>(null);
   const [tab, setTab] = useState('info');
   const [saving, setSaving] = useState(false);
+  const [sendingInvite, setSendingInvite] = useState(false);
 
   useEffect(() => {
     fetch(`/api/hiring/applicants/${applicantId}`).then(r => r.json()).then(data => {
@@ -204,6 +205,29 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
     onSaved();
     onClose();
   };
+
+  const sendInvite = async () => {
+    if (!app) return;
+    if (!app.email) { alert('No email address on file for this applicant.'); return; }
+    setSendingInvite(true);
+    try {
+      const res = await fetch(`/api/hiring/applicants/${applicantId}/send-invite`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Failed to send invite');
+      } else {
+        alert(`✅ Interview invite sent to ${app.email}`);
+        // Refresh applicant to show updated notes
+        fetch(`/api/hiring/applicants/${applicantId}`).then(r => r.json()).then(setApp);
+      }
+    } catch (err) {
+      alert('Failed to send invite. Check console.');
+    } finally {
+      setSendingInvite(false);
+    }
+  };
+
+  const inviteAlreadySent = app?.notes?.includes('interview_invited') || false;
 
   if (!app) return (
     <div className="modal-overlay" onClick={onClose}>
@@ -397,6 +421,36 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
 
           {tab === 'interview' && (
             <>
+              {/* Invite button — prominent at top */}
+              <div style={{ marginBottom: 16, padding: 14, background: 'var(--bg)', borderRadius: 10, border: `1px solid ${inviteAlreadySent ? 'var(--border)' : 'var(--accent)'}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: inviteAlreadySent ? 'var(--text-dim)' : 'var(--text)' }}>
+                      {inviteAlreadySent ? '✅ Interview invite sent' : '📅 Interview invite not sent yet'}
+                    </div>
+                    {!inviteAlreadySent && app?.email && (
+                      <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>{app.email}</div>
+                    )}
+                    {!app?.email && (
+                      <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 2 }}>No email on file — can't send</div>
+                    )}
+                  </div>
+                  {!inviteAlreadySent && app?.email && (
+                    <button
+                      onClick={sendInvite}
+                      disabled={sendingInvite}
+                      style={{
+                        padding: '7px 14px', borderRadius: 8, border: '1px solid var(--accent)',
+                        background: 'var(--accent)', color: 'white', fontSize: 12, fontWeight: 600,
+                        cursor: sendingInvite ? 'not-allowed' : 'pointer', opacity: sendingInvite ? 0.6 : 1,
+                      }}
+                    >
+                      {sendingInvite ? 'Sending...' : 'Send Invite'}
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <div className="form-group">
                 <label className="form-label">Interview Date</label>
                 <input type="date" value={app.interview_date || ''} onChange={e => update('interview_date', e.target.value)} />
@@ -437,36 +491,57 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
               {isEditor ? (
                 // ── EDITOR PORTFOLIO GRADING VIEW ──────────────────────────────
                 <>
-                  {/* Portfolio link — big, prominent, at the top */}
+                  {/* Portfolio links — labeled by source */}
                   {(() => {
                     const urlRegex = /(https?:\/\/[^\s,)]+)/g;
-                    const allLinks = [
-                      ...(app.portfolio_url ? app.portfolio_url.match(urlRegex) || [] : []),
-                      ...(app.notes ? app.notes.match(urlRegex) || [] : []),
-                    ].filter((v, i, a) => a.indexOf(v) === i); // dedupe
-                    return allLinks.length > 0 ? (
-                      <div style={{ marginBottom: 16, padding: 16, background: 'var(--bg)', borderRadius: 10, border: '2px solid var(--accent)' }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', letterSpacing: 0.5, marginBottom: 10 }}>PORTFOLIO</div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                          {allLinks.map((link, i) => (
-                            <a key={i} href={link} target="_blank" rel="noopener noreferrer"
-                              style={{
-                                display: 'flex', alignItems: 'center', gap: 8,
-                                padding: '10px 14px', borderRadius: 8,
-                                background: 'var(--card)', border: '1px solid var(--border)',
-                                color: 'var(--blue)', textDecoration: 'none', fontSize: 13, fontWeight: 500,
-                              }}>
-                              <ExternalLink size={15} style={{ flexShrink: 0 }} />
-                              {link.includes('drive.google.com') ? '📁 Google Drive Portfolio' :
-                               link.includes('docs.google.com') ? '📄 Google Doc' :
-                               link.includes('youtube.com') || link.includes('youtu.be') ? '▶️ YouTube' :
-                               link.includes('vimeo.com') ? '🎬 Vimeo' :
-                               link.includes('canva.com') ? '🎨 Canva' :
-                               link.includes('behance.net') ? '🖼 Behance' :
-                               '🔗 Portfolio Link'}
-                            </a>
-                          ))}
-                        </div>
+                    const initialLinks: string[] = app.portfolio_url ? (app.portfolio_url.match(urlRegex) || []) : [];
+                    const submittedLinks = ([app.notes, app.trial_task_notes] as (string | undefined)[])
+                      .filter((s): s is string => Boolean(s))
+                      .flatMap(s => s.match(urlRegex) || [])
+                      .filter(l => !initialLinks.includes(l));
+                    const hasAny = initialLinks.length > 0 || submittedLinks.length > 0;
+
+                    function linkLabel(link: string) {
+                      if (link.includes('drive.google.com')) return '📁 Google Drive';
+                      if (link.includes('docs.google.com')) return '📄 Google Doc';
+                      if (link.includes('youtube.com') || link.includes('youtu.be')) return '▶️ YouTube';
+                      if (link.includes('vimeo.com')) return '🎬 Vimeo';
+                      if (link.includes('canva.com')) return '🎨 Canva';
+                      if (link.includes('behance.net')) return '🖼 Behance';
+                      if (link.includes('carrd.co')) return '🌐 Carrd Portfolio';
+                      return '🔗 Link';
+                    }
+
+                    return hasAny ? (
+                      <div style={{ marginBottom: 16 }}>
+                        {submittedLinks.length > 0 && (
+                          <div style={{ marginBottom: 10, padding: 16, background: 'var(--bg)', borderRadius: 10, border: '2px solid var(--accent)' }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', letterSpacing: 0.5, marginBottom: 10 }}>SUBMITTED WORK</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                              {submittedLinks.map((link, i) => (
+                                <a key={i} href={link} target="_blank" rel="noopener noreferrer"
+                                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 8, background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--blue)', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>
+                                  <ExternalLink size={15} style={{ flexShrink: 0 }} />
+                                  {linkLabel(link)}
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {initialLinks.length > 0 && (
+                          <div style={{ padding: 14, background: 'var(--bg)', borderRadius: 10, border: '1px solid var(--border)' }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: 0.5, marginBottom: 10 }}>INITIAL APPLICATION</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                              {initialLinks.map((link, i) => (
+                                <a key={i} href={link} target="_blank" rel="noopener noreferrer"
+                                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 8, background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--blue)', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>
+                                  <ExternalLink size={15} style={{ flexShrink: 0 }} />
+                                  {linkLabel(link)}
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div style={{ marginBottom: 16, padding: 14, background: 'var(--bg)', borderRadius: 8, border: '1px dashed var(--border)', textAlign: 'center', color: 'var(--text-dim)', fontSize: 12, fontStyle: 'italic' }}>
