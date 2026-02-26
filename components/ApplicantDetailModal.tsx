@@ -99,7 +99,9 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
     fetch(`/api/hiring/applicants/${applicantId}`).then(r => r.json()).then(data => {
       setApp(data);
       // Reset tab based on role type and stage
-      if (data?.stage === 'evaluation') {
+      if (data?.role_type === 'editor' && (data?.stage === 'trial_sent' || data?.stage === 'evaluation')) {
+        setTab('trial'); // Portfolio Received / Review → open straight to trial/grading tab
+      } else if (data?.stage === 'evaluation') {
         setTab('trial');
       } else if (data?.role_type === 'editor') {
         setTab('portfolio');
@@ -141,15 +143,23 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
       attitude_rating: Number(app.attitude_rating) || 0,
       motivation_rating: Number(app.motivation_rating) || 0,
     };
-    // Auto-reject if trial_task_score is set and below 4
+    // Auto-reject if trial_task_score is set and below 4 (Ops)
     const score = payload.trial_task_score;
     if (score > 0 && score < 4 && payload.stage === 'evaluation') {
       payload.stage = 'rejected';
       payload.rejection_reason = `Trial task score: ${score}/10`;
     }
-    // Auto-reject if portfolio_score is set and below 4
+    // Auto-promote/reject based on portfolio_score (Editors grading from trial_sent or evaluation)
     const pScore = payload.portfolio_score;
-    if (pScore > 0 && pScore < 4 && payload.stage === 'evaluation') {
+    const isEditorGrading = payload.role_type === 'editor' && (payload.stage === 'trial_sent' || payload.stage === 'evaluation');
+    if (pScore > 0 && isEditorGrading) {
+      if (pScore < 4) {
+        payload.stage = 'rejected';
+        payload.rejection_reason = `Portfolio score: ${pScore}/10`;
+      } else {
+        payload.stage = 'interview'; // ≥4 → promote to interview
+      }
+    } else if (pScore > 0 && pScore < 4 && payload.stage === 'evaluation') {
       payload.stage = 'rejected';
       payload.rejection_reason = `Portfolio score: ${pScore}/10`;
     }
@@ -168,11 +178,15 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
       }
       const result = await res.json();
       console.log('[DEBUG] Save response:', result);
-      // Show toast if auto-rejected
+      // Show toast if auto-promoted/rejected
       if (score > 0 && score < 4 && app.stage === 'evaluation') {
         alert(`Moved to Rejected (trial task score: ${score}/10)`);
-      } else if (pScore > 0 && pScore < 4 && app.stage === 'evaluation') {
-        alert(`Moved to Rejected (portfolio score: ${pScore}/10)`);
+      } else if (pScore > 0 && isEditorGrading) {
+        if (pScore < 4) {
+          alert(`Moved to Rejected (portfolio score: ${pScore}/10)`);
+        } else {
+          alert(`✅ Promoted to Interview (portfolio score: ${pScore}/10)`);
+        }
       }
       onSaved();
       onClose();
@@ -420,82 +434,169 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
 
           {tab === 'trial' && (
             <>
-              {/* Submission content first — this is what you want to review */}
-              <div style={{ marginBottom: 16, padding: 14, background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', marginBottom: 8 }}>SUBMISSION</div>
-                {app.trial_task_notes || app.notes ? (
-                  <div style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--text)', whiteSpace: 'pre-wrap', overflow: 'hidden' }}>
-                    {(() => {
-                      // Extract links from notes
-                      const allNotes = [app.trial_task_notes, app.notes].filter(Boolean).join('\n');
-                      const urlRegex = /(https?:\/\/[^\s,)]+)/g;
-                      const links = allNotes.match(urlRegex);
-                      return (
-                        <>
-                          {links && links.length > 0 && (
-                            <div style={{ marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                              {links.map((link, i) => (
-                                <a key={i} href={link} target="_blank" rel="noopener noreferrer"
-                                  style={{ color: 'var(--blue)', fontSize: 13, wordBreak: 'break-all', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                  <ExternalLink size={13} style={{ flexShrink: 0 }} />
-                                  {link.includes('docs.google.com') ? 'Google Doc' :
-                                   link.includes('drive.google.com') ? 'Google Drive' :
-                                   link.includes('youtube.com') || link.includes('youtu.be') ? 'YouTube' :
-                                   link.includes('vimeo.com') ? 'Vimeo' :
-                                   link}
-                                </a>
-                              ))}
-                            </div>
-                          )}
-                          <div style={{ color: 'var(--text-dim)', fontSize: 12 }}>{allNotes}</div>
-                        </>
-                      );
-                    })()}
-                  </div>
-                ) : (
-                  <div style={{ fontSize: 12, color: 'var(--text-dim)', fontStyle: 'italic' }}>
-                    No submission received yet
-                  </div>
-                )}
-              </div>
+              {isEditor ? (
+                // ── EDITOR PORTFOLIO GRADING VIEW ──────────────────────────────
+                <>
+                  {/* Portfolio link — big, prominent, at the top */}
+                  {(() => {
+                    const urlRegex = /(https?:\/\/[^\s,)]+)/g;
+                    const allLinks = [
+                      ...(app.portfolio_url ? app.portfolio_url.match(urlRegex) || [] : []),
+                      ...(app.notes ? app.notes.match(urlRegex) || [] : []),
+                    ].filter((v, i, a) => a.indexOf(v) === i); // dedupe
+                    return allLinks.length > 0 ? (
+                      <div style={{ marginBottom: 16, padding: 16, background: 'var(--bg)', borderRadius: 10, border: '2px solid var(--accent)' }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', letterSpacing: 0.5, marginBottom: 10 }}>PORTFOLIO</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {allLinks.map((link, i) => (
+                            <a key={i} href={link} target="_blank" rel="noopener noreferrer"
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 8,
+                                padding: '10px 14px', borderRadius: 8,
+                                background: 'var(--card)', border: '1px solid var(--border)',
+                                color: 'var(--blue)', textDecoration: 'none', fontSize: 13, fontWeight: 500,
+                              }}>
+                              <ExternalLink size={15} style={{ flexShrink: 0 }} />
+                              {link.includes('drive.google.com') ? '📁 Google Drive Portfolio' :
+                               link.includes('docs.google.com') ? '📄 Google Doc' :
+                               link.includes('youtube.com') || link.includes('youtu.be') ? '▶️ YouTube' :
+                               link.includes('vimeo.com') ? '🎬 Vimeo' :
+                               link.includes('canva.com') ? '🎨 Canva' :
+                               link.includes('behance.net') ? '🖼 Behance' :
+                               '🔗 Portfolio Link'}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ marginBottom: 16, padding: 14, background: 'var(--bg)', borderRadius: 8, border: '1px dashed var(--border)', textAlign: 'center', color: 'var(--text-dim)', fontSize: 12, fontStyle: 'italic' }}>
+                        No portfolio link on file
+                      </div>
+                    );
+                  })()}
 
-              {/* Score */}
-              <div className="form-group">
-                <label className="form-label">Your Score (1-10)</label>
-                <div style={{ display: 'flex', gap: 4 }}>
-                  {[1,2,3,4,5,6,7,8,9,10].map(n => (
-                    <button key={n} onClick={() => update('trial_task_score', n === getScoreValue('trial_task_score') ? 0 : n)}
-                      style={{
-                        width: 32, height: 32, borderRadius: 6, border: '1px solid var(--border)',
-                        background: n <= getScoreValue('trial_task_score') ? 'var(--accent)' : 'var(--bg)',
-                        color: n <= getScoreValue('trial_task_score') ? 'white' : 'var(--text-dim)',
-                        fontWeight: 600, fontSize: 12, cursor: 'pointer',
-                        transition: 'all 0.15s',
-                      }}>{n}</button>
-                  ))}
-                </div>
-              </div>
+                  {/* Experience */}
+                  {app.experience && (
+                    <div style={{ marginBottom: 16, padding: 12, background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: 0.5, marginBottom: 8 }}>EXPERIENCE</div>
+                      <div style={{ fontSize: 12, lineHeight: 1.7, color: 'var(--text)', whiteSpace: 'pre-wrap' }}>{app.experience}</div>
+                    </div>
+                  )}
 
-              {/* Evaluation notes */}
-              <div className="form-group">
-                <label className="form-label">Your Evaluation Notes</label>
-                <textarea value={app.trial_task_notes} onChange={e => update('trial_task_notes', e.target.value)} rows={5} placeholder="What did you think of their work?" />
-              </div>
+                  {/* Salary */}
+                  {app.desired_salary && (
+                    <div style={{ marginBottom: 16, display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-dim)' }}>ASKING:</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{app.desired_salary.split('(')[0].trim()}</span>
+                    </div>
+                  )}
 
-              {/* Dates collapsed at bottom */}
-              <details style={{ marginTop: 8 }}>
-                <summary style={{ fontSize: 11, color: 'var(--text-dim)', cursor: 'pointer' }}>Timeline details</summary>
-                <div className="grid-2" style={{ marginTop: 8 }}>
+                  {/* Score */}
                   <div className="form-group">
-                    <label className="form-label">Task Sent</label>
-                    <input type="date" value={app.trial_task_sent_at || ''} onChange={e => update('trial_task_sent_at', e.target.value)} />
+                    <label className="form-label">Portfolio Score (1–10)</label>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      {[1,2,3,4,5,6,7,8,9,10].map(n => (
+                        <button key={n} type="button" onClick={() => update('portfolio_score', n === getScoreValue('portfolio_score') ? 0 : n)}
+                          style={{
+                            width: 32, height: 32, borderRadius: 6, border: '1px solid var(--border)',
+                            background: n <= getScoreValue('portfolio_score') ? 'var(--accent)' : 'var(--bg)',
+                            color: n <= getScoreValue('portfolio_score') ? 'white' : 'var(--text-dim)',
+                            fontWeight: 600, fontSize: 12, cursor: 'pointer',
+                            transition: 'all 0.15s',
+                          }}>{n}</button>
+                      ))}
+                    </div>
+                    <div style={{ marginTop: 6, fontSize: 11, color: 'var(--text-dim)' }}>
+                      ≥4 → Interview &nbsp;·&nbsp; &lt;4 → Reject
+                    </div>
                   </div>
+
+                  {/* Notes */}
                   <div className="form-group">
-                    <label className="form-label">Task Received</label>
-                    <input type="date" value={app.trial_task_received_at || ''} onChange={e => update('trial_task_received_at', e.target.value)} />
+                    <label className="form-label">Your Notes</label>
+                    <textarea value={app.screening_notes} onChange={e => update('screening_notes', e.target.value)} rows={4} placeholder="What stood out? Edit quality, style, storytelling..." />
                   </div>
-                </div>
-              </details>
+                </>
+              ) : (
+                // ── OPS TRIAL TASK VIEW ─────────────────────────────────────────
+                <>
+                  {/* Submission content first — this is what you want to review */}
+                  <div style={{ marginBottom: 16, padding: 14, background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', marginBottom: 8 }}>SUBMISSION</div>
+                    {app.trial_task_notes || app.notes ? (
+                      <div style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--text)', whiteSpace: 'pre-wrap', overflow: 'hidden' }}>
+                        {(() => {
+                          const allNotes = [app.trial_task_notes, app.notes].filter(Boolean).join('\n');
+                          const urlRegex = /(https?:\/\/[^\s,)]+)/g;
+                          const links = allNotes.match(urlRegex);
+                          return (
+                            <>
+                              {links && links.length > 0 && (
+                                <div style={{ marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                  {links.map((link, i) => (
+                                    <a key={i} href={link} target="_blank" rel="noopener noreferrer"
+                                      style={{ color: 'var(--blue)', fontSize: 13, wordBreak: 'break-all', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                      <ExternalLink size={13} style={{ flexShrink: 0 }} />
+                                      {link.includes('docs.google.com') ? 'Google Doc' :
+                                       link.includes('drive.google.com') ? 'Google Drive' :
+                                       link.includes('youtube.com') || link.includes('youtu.be') ? 'YouTube' :
+                                       link.includes('vimeo.com') ? 'Vimeo' :
+                                       link}
+                                    </a>
+                                  ))}
+                                </div>
+                              )}
+                              <div style={{ color: 'var(--text-dim)', fontSize: 12 }}>{allNotes}</div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 12, color: 'var(--text-dim)', fontStyle: 'italic' }}>
+                        No submission received yet
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Score */}
+                  <div className="form-group">
+                    <label className="form-label">Your Score (1-10)</label>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      {[1,2,3,4,5,6,7,8,9,10].map(n => (
+                        <button key={n} onClick={() => update('trial_task_score', n === getScoreValue('trial_task_score') ? 0 : n)}
+                          style={{
+                            width: 32, height: 32, borderRadius: 6, border: '1px solid var(--border)',
+                            background: n <= getScoreValue('trial_task_score') ? 'var(--accent)' : 'var(--bg)',
+                            color: n <= getScoreValue('trial_task_score') ? 'white' : 'var(--text-dim)',
+                            fontWeight: 600, fontSize: 12, cursor: 'pointer',
+                            transition: 'all 0.15s',
+                          }}>{n}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Evaluation notes */}
+                  <div className="form-group">
+                    <label className="form-label">Your Evaluation Notes</label>
+                    <textarea value={app.trial_task_notes} onChange={e => update('trial_task_notes', e.target.value)} rows={5} placeholder="What did you think of their work?" />
+                  </div>
+
+                  {/* Dates collapsed at bottom */}
+                  <details style={{ marginTop: 8 }}>
+                    <summary style={{ fontSize: 11, color: 'var(--text-dim)', cursor: 'pointer' }}>Timeline details</summary>
+                    <div className="grid-2" style={{ marginTop: 8 }}>
+                      <div className="form-group">
+                        <label className="form-label">Task Sent</label>
+                        <input type="date" value={app.trial_task_sent_at || ''} onChange={e => update('trial_task_sent_at', e.target.value)} />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Task Received</label>
+                        <input type="date" value={app.trial_task_received_at || ''} onChange={e => update('trial_task_received_at', e.target.value)} />
+                      </div>
+                    </div>
+                  </details>
+                </>
+              )}
             </>
           )}
 
