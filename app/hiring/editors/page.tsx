@@ -30,8 +30,7 @@ interface Position {
 const STAGES = [
   { key: 'applied', label: 'Applied', color: '#58a6ff' },
   { key: 'contacted', label: 'Portfolio Requested', color: '#d29922' },
-  { key: 'trial_sent', label: 'Portfolio Received', color: '#a371f7' },
-  { key: 'evaluation', label: 'Portfolio Review', color: '#2f9e44' },
+  { key: 'evaluation', label: 'Portfolio Review', color: '#a371f7', extraStages: ['trial_sent'] },
   { key: 'interview', label: 'Interview', color: '#d29922' },
   { key: 'hired', label: 'Hired', color: '#3fb950' },
 ];
@@ -85,7 +84,8 @@ export default function EditorHiringPage() {
   };
 
   const renderColumn = (stage: typeof STAGES[0]) => {
-    const stageApps = applicants.filter(a => a.stage === stage.key);
+    const stageKeys = [stage.key, ...(('extraStages' in stage ? stage.extraStages : []) as string[])];
+    const stageApps = applicants.filter(a => stageKeys.includes(a.stage));
     const isOver = dragOver === stage.key;
     return (
       <div
