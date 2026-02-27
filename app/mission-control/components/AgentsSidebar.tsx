@@ -179,8 +179,8 @@ export function AgentsSidebar({ workspaceId }: AgentsSidebarProps) {
       </div>
 
       {/* Agent List */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-1">
-        {filteredAgents.map((agent) => {
+      <div className="flex-1 overflow-y-auto px-2 py-1">
+        {filteredAgents.map((agent, index) => {
           const openclawSession = agentOpenClawSessions[agent.id];
 
           if (isMinimized) {
@@ -221,20 +221,25 @@ export function AgentsSidebar({ workspaceId }: AgentsSidebarProps) {
 
           // Expanded view - full agent card
           const isConnecting = connectingAgentId === agent.id;
+          const isSelected = selectedAgent?.id === agent.id;
           return (
-            <div
-              key={agent.id}
-              className={`w-full rounded hover:bg-mc-bg-tertiary transition-colors ${
-                selectedAgent?.id === agent.id ? 'bg-mc-bg-tertiary' : ''
-              }`}
-            >
-              <button
-                onClick={() => {
-                  setSelectedAgent(agent);
-                  setEditingAgent(agent);
-                }}
-                className="w-full flex items-center gap-3 p-2 text-left bg-transparent"
+            <div key={agent.id}>
+              <div
+                className={`w-full rounded-md transition-colors ${
+                  isSelected
+                    ? 'bg-mc-bg-tertiary border-l-2 border-mc-accent'
+                    : 'hover:bg-mc-bg-tertiary/50'
+                }`}
               >
+                <button
+                  onClick={() => {
+                    setSelectedAgent(agent);
+                    setEditingAgent(agent);
+                  }}
+                  className={`w-full flex items-center gap-3 py-2 pr-2 text-left bg-transparent ${
+                    isSelected ? 'pl-2.5' : 'pl-3'
+                  }`}
+                >
                 {/* Avatar */}
                 <div className="text-lg relative flex-shrink-0">
                   {agent.avatar_emoji}
@@ -251,7 +256,7 @@ export function AgentsSidebar({ workspaceId }: AgentsSidebarProps) {
                       <span className="text-[10px] text-mc-accent-yellow/70">★</span>
                     )}
                   </div>
-                  <div className="text-[11px] text-mc-text-secondary truncate flex items-center gap-1">
+                  <div className="text-[11px] text-mc-text-secondary/70 truncate flex items-center gap-1">
                     {agent.role}
                     {agent.source === 'gateway' && (
                       <span className="text-[9px] px-1 py-0 bg-blue-500/10 text-blue-400/60 rounded" title="Imported from Gateway">
@@ -263,42 +268,43 @@ export function AgentsSidebar({ workspaceId }: AgentsSidebarProps) {
 
                 {/* Status dot */}
                 <span
-                  className={`w-[7px] h-[7px] rounded-full flex-shrink-0 ${getStatusDotColor(agent.status)}`}
+                  className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${getStatusDotColor(agent.status)}`}
                   title={agent.status}
                 />
               </button>
 
               {/* OpenClaw Connect Button - show for master agents */}
               {!!agent.is_master && (
-                <div className="px-2 pb-2">
+                <div className={`pb-1.5 pr-2 ${isSelected ? 'pl-[14px]' : 'pl-3'}`}>
                   <button
                     onClick={(e) => handleConnectToOpenClaw(agent, e)}
                     disabled={isConnecting}
-                    className={`w-full flex items-center justify-center gap-2 px-2 py-1 rounded text-xs transition-colors ${
+                    className={`w-full flex items-center justify-center gap-1.5 px-2 py-0.5 rounded text-[10px] transition-colors border-0 outline-none ${
                       openclawSession
-                        ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
-                        : 'bg-mc-bg text-mc-text-secondary hover:bg-mc-bg-tertiary hover:text-mc-text'
+                        ? 'text-green-400/60 hover:text-green-400/90'
+                        : 'text-mc-text-secondary/30 hover:text-mc-text-secondary/60'
                     }`}
                   >
                     {isConnecting ? (
                       <>
-                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <Loader2 className="w-2.5 h-2.5 animate-spin" />
                         <span>Connecting...</span>
                       </>
                     ) : openclawSession ? (
                       <>
-                        <Zap className="w-3 h-3" />
+                        <Zap className="w-2.5 h-2.5" />
                         <span>OpenClaw Connected</span>
                       </>
                     ) : (
                       <>
-                        <ZapOff className="w-3 h-3" />
+                        <ZapOff className="w-2.5 h-2.5" />
                         <span>Connect to OpenClaw</span>
                       </>
                     )}
                   </button>
                 </div>
               )}
+              </div>
             </div>
           );
         })}
