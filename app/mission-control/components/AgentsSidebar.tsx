@@ -179,7 +179,7 @@ export function AgentsSidebar({ workspaceId }: AgentsSidebarProps) {
       </div>
 
       {/* Agent List */}
-      <div className="flex-1 overflow-y-auto px-2 py-1">
+      <div className="flex-1 overflow-y-auto px-2 py-2 space-y-2">
         {filteredAgents.map((agent, index) => {
           const openclawSession = agentOpenClawSessions[agent.id];
 
@@ -225,10 +225,10 @@ export function AgentsSidebar({ workspaceId }: AgentsSidebarProps) {
           return (
             <div key={agent.id}>
               <div
-                className={`w-full rounded-md transition-colors ${
+                className={`w-full rounded-lg transition-colors border border-mc-border/40 ${
                   isSelected
-                    ? 'bg-mc-bg-tertiary border-l-2 border-mc-accent'
-                    : 'hover:bg-mc-bg-tertiary/50'
+                    ? 'bg-mc-bg-secondary border-l-2 border-l-mc-accent'
+                    : 'bg-mc-bg-secondary/80 hover:bg-mc-bg-secondary'
                 }`}
               >
                 <button
