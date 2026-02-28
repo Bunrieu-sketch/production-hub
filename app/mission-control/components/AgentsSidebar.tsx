@@ -225,10 +225,10 @@ export function AgentsSidebar({ workspaceId }: AgentsSidebarProps) {
           return (
             <div key={agent.id}>
               <div
-                className={`w-full rounded-lg transition-colors border border-mc-border/40 ${
+                className={`w-full rounded-lg transition-colors border border-mc-border/50 ${
                   isSelected
-                    ? 'bg-mc-bg-secondary border-l-2 border-l-mc-accent'
-                    : 'bg-mc-bg-secondary/80 hover:bg-mc-bg-secondary'
+                    ? 'bg-mc-bg-tertiary border-l-2 border-l-mc-accent'
+                    : 'bg-mc-bg-tertiary hover:bg-[#344058]'
                 }`}
               >
                 <button
