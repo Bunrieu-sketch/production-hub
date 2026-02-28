@@ -1,3 +1,6 @@
+@tailwind components;
+@tailwind utilities;
+
 * {
   margin: 0;
   padding: 0;
@@ -5,11 +8,11 @@
 }
 
 :root {
-  --bg: #0d1117;
-  --card: #161b22;
-  --border: #30363d;
-  --text: #e6edf3;
-  --text-dim: #c9d1d9;
+  --bg: #141921;
+  --card: #222b3d;
+  --border: #445073;
+  --text: #f0f4fc;
+  --text-dim: #b0bcda;
   --accent: #a371f7;
   --accent-hover: #8957e5;
   --green: #3fb950;
@@ -17,6 +20,20 @@
   --blue: #58a6ff;
   --orange: #d29922;
   --red: #f85149;
+
+  --mc-bg: var(--bg);
+  --mc-bg-secondary: var(--card);
+  --mc-bg-tertiary: #2a3347;
+  --mc-border: var(--border);
+  --mc-text: var(--text);
+  --mc-text-secondary: var(--text-dim);
+  --mc-accent: var(--blue);
+  --mc-accent-green: var(--green);
+  --mc-accent-yellow: var(--orange);
+  --mc-accent-red: var(--red);
+  --mc-accent-purple: var(--accent);
+  --mc-accent-pink: #db61a2;
+  --mc-accent-cyan: #39d353;
 }
 
 body {
@@ -342,6 +359,112 @@ textarea {
   flex: 1;
   overflow: auto;
   padding: 24px;
+}
+
+/* Mission Control */
+.mission-control-root {
+  margin: -24px;
+  min-height: 100%;
+  background: var(--mc-bg);
+  color: var(--mc-text);
+}
+
+.mission-control-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.mission-control-shell .mc-scroll {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Mission Control badges */
+.status-standby {
+  background: var(--mc-bg-tertiary);
+  color: var(--mc-text-secondary);
+  border: 1px solid var(--mc-border);
+}
+
+.status-working {
+  background: rgba(63, 185, 80, 0.2);
+  color: var(--mc-accent-green);
+  border: 1px solid rgba(63, 185, 80, 0.5);
+}
+
+.status-offline {
+  background: rgba(248, 81, 73, 0.2);
+  color: var(--mc-accent-red);
+  border: 1px solid rgba(248, 81, 73, 0.5);
+}
+
+.priority-low {
+  background: rgba(139, 148, 158, 0.2);
+  color: var(--mc-text-secondary);
+}
+
+.priority-normal {
+  background: rgba(88, 166, 255, 0.2);
+  color: var(--mc-accent);
+}
+
+.priority-high {
+  background: rgba(210, 153, 34, 0.2);
+  color: var(--mc-accent-yellow);
+}
+
+.priority-urgent {
+  background: rgba(248, 81, 73, 0.2);
+  color: var(--mc-accent-red);
+}
+
+.column-inbox {
+  border-top-color: var(--mc-accent-pink);
+}
+
+.column-assigned {
+  border-top-color: var(--mc-accent-yellow);
+}
+
+.column-in_progress {
+  border-top-color: var(--mc-accent);
+}
+
+.column-review {
+  border-top-color: var(--mc-accent-purple);
+}
+
+.column-done {
+  border-top-color: var(--mc-accent-green);
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.2s ease-out;
+}
+
+.online-glow {
+  box-shadow: 0 0 10px var(--mc-accent-green), 0 0 20px var(--mc-accent-green);
 }
 
 /* MC Layout */
@@ -733,6 +856,7 @@ textarea {
   border-radius: 12px;
   padding: 24px;
   width: 400px;
+  overflow: hidden;
 }
 
 .modal h3 {

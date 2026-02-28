@@ -167,7 +167,7 @@ export function AgentsSidebar({ workspaceId }: AgentsSidebarProps) {
                   className={`px-2 py-0.5 text-[10px] rounded uppercase tracking-wide ${
                     filter === tab
                       ? 'bg-mc-bg-tertiary text-mc-text-secondary font-medium border border-mc-border'
-                      : 'text-mc-text-secondary/60 hover:bg-mc-bg-tertiary/50 hover:text-mc-text-secondary'
+                      : 'text-mc-text-secondary/70 hover:bg-mc-bg-tertiary/60 hover:text-mc-text'
                   }`}
                 >
                   {tab}
@@ -251,19 +251,24 @@ export function AgentsSidebar({ workspaceId }: AgentsSidebarProps) {
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-sm text-mc-text truncate">{agent.name}</span>
+                    <span className="text-sm font-medium text-mc-text truncate">{agent.name}</span>
                     {!!agent.is_master && (
-                      <span className="text-[10px] text-mc-accent-yellow/70">★</span>
+                      <span className="text-[10px] text-mc-accent-yellow">★</span>
                     )}
                   </div>
-                  <div className="text-[11px] text-mc-text-secondary/70 truncate flex items-center gap-1">
+                  <div className="text-[11px] text-mc-text-secondary truncate flex items-center gap-1">
                     {agent.role}
                     {agent.source === 'gateway' && (
-                      <span className="text-[9px] px-1 py-0 bg-blue-500/10 text-blue-400/60 rounded" title="Imported from Gateway">
+                      <span className="text-[9px] px-1 py-0 bg-blue-500/15 text-blue-400/80 rounded" title="Imported from Gateway">
                         GW
                       </span>
                     )}
                   </div>
+                  {agent.model && (
+                    <span className="inline-block text-[9px] px-1.5 py-0.5 mt-1 rounded bg-mc-accent-purple/15 text-mc-accent-purple font-medium truncate max-w-full">
+                      {agent.model.includes('/') ? agent.model.split('/').pop() : agent.model}
+                    </span>
+                  )}
                 </div>
 
                 {/* Status dot */}
@@ -281,8 +286,8 @@ export function AgentsSidebar({ workspaceId }: AgentsSidebarProps) {
                     disabled={isConnecting}
                     className={`w-full flex items-center justify-center gap-1.5 px-2 py-0.5 rounded text-[10px] transition-colors border-0 outline-none ${
                       openclawSession
-                        ? 'text-green-400/60 hover:text-green-400/90'
-                        : 'text-mc-text-secondary/30 hover:text-mc-text-secondary/60'
+                        ? 'text-green-400/80 hover:text-green-400'
+                        : 'text-mc-text-secondary/50 hover:text-mc-text-secondary/80'
                     }`}
                   >
                     {isConnecting ? (
@@ -315,14 +320,14 @@ export function AgentsSidebar({ workspaceId }: AgentsSidebarProps) {
         <div className="p-3 border-t border-mc-border space-y-1.5">
           <button
             onClick={() => setShowCreateModal(true)}
-            className="w-full flex items-center justify-center gap-2 px-3 py-1.5 hover:bg-mc-bg-tertiary rounded text-xs text-mc-text-secondary/60 hover:text-mc-text-secondary transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-3 py-1.5 hover:bg-mc-bg-tertiary rounded text-xs text-mc-text-secondary/70 hover:text-mc-text transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             Add Agent
           </button>
           <button
             onClick={() => setShowDiscoverModal(true)}
-            className="w-full flex items-center justify-center gap-2 px-3 py-1.5 hover:bg-mc-bg-tertiary rounded text-xs text-mc-text-secondary/60 hover:text-mc-text-secondary transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-3 py-1.5 hover:bg-mc-bg-tertiary rounded text-xs text-mc-text-secondary/70 hover:text-mc-text transition-colors"
           >
             <Search className="w-3.5 h-3.5" />
             Import from Gateway
