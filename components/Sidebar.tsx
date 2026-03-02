@@ -4,10 +4,10 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutGrid, Kanban, FileText, Search, Palette,
+  LayoutGrid, FileText, Search, Palette,
   GanttChart, Calendar, Clapperboard, Video, Route,
   HandCoins, Users, UserPlus, ChevronDown, ChevronRight,
-  ExternalLink, ShieldCheck, Gavel, FolderOpen, BarChart3,
+  ExternalLink, ShieldCheck, Gavel, FolderOpen, BarChart3, Rocket,
 } from 'lucide-react';
 
 interface NavSection {
@@ -21,6 +21,7 @@ export function Sidebar() {
   const [productionOpen, setProductionOpen] = useState(true);
   const [pipelineOpen, setPipelineOpen] = useState(true);
   const [projectsOpen, setProjectsOpen] = useState(true);
+  const [hiringOpen, setHiringOpen] = useState(true);
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
@@ -44,8 +45,6 @@ export function Sidebar() {
         { href: '/pipeline/sponsors', icon: <HandCoins size={16} />, label: 'Sponsors' },
         { href: '/pipeline/people', icon: <Users size={16} />, label: 'People' },
         { href: '/field-contacts', icon: <FolderOpen size={16} />, label: 'Field Contacts' },
-        { href: '/hiring/editors', icon: <UserPlus size={16} />, label: 'Hiring: Editors' },
-        { href: '/hiring/ops', icon: <UserPlus size={16} />, label: 'Hiring: Content Ops' },
       ],
     },
     {
@@ -75,10 +74,12 @@ export function Sidebar() {
         <span className="logo-text">Production Hub</span>
       </div>
 
-      {/* Tasks — home */}
-      <Link href="/" className={`nav-item ${pathname === '/' ? 'active' : ''}`}>
-        <Kanban size={18} />
-        <span>Tasks</span>
+      <Link
+        href="/mission-control"
+        className={`nav-item ${isActive('/mission-control') ? 'active' : ''}`}
+      >
+        <Rocket size={18} />
+        <span>Mission Control</span>
       </Link>
 
       {/* Collapsible sections */}
@@ -123,6 +124,44 @@ export function Sidebar() {
           )}
         </div>
       ))}
+
+      {/* Hiring */}
+      <div>
+        <button
+          className="nav-section-toggle"
+          onClick={() => setHiringOpen(!hiringOpen)}
+        >
+          <span className="nav-section-label">HIRING</span>
+          {hiringOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+        </button>
+        {hiringOpen && (
+          <div className="nav-nested">
+            <Link
+              href="/hiring"
+              className={`nav-item nested ${pathname === '/hiring' ? 'active' : ''}`}
+            >
+              <UserPlus size={16} />
+              <span>All Positions</span>
+            </Link>
+            <Link
+              href="/hiring/ops"
+              className={`nav-item nested ${isActive('/hiring/ops') ? 'active' : ''}`}
+              style={{ paddingLeft: 28 }}
+            >
+              <span style={{ marginRight: 6, opacity: 0.4 }}>↳</span>
+              <span>Content Ops</span>
+            </Link>
+            <Link
+              href="/hiring/editors"
+              className={`nav-item nested ${isActive('/hiring/editors') ? 'active' : ''}`}
+              style={{ paddingLeft: 28 }}
+            >
+              <span style={{ marginRight: 6, opacity: 0.4 }}>↳</span>
+              <span>Editors</span>
+            </Link>
+          </div>
+        )}
+      </div>
 
       {/* Bottom links */}
       <div className="nav-divider" />
