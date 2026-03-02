@@ -439,11 +439,9 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
                 )}
               </div>
 
-              {/* Trial Task / Portfolio Link — quick access during interview */}
+              {/* CV + Trial Task / Portfolio — quick access during interview */}
               {(() => {
                 const urlRegex = /(https?:\/\/[^\s,)]+)/g;
-                const allText = [app.trial_task_notes, app.notes, app.portfolio_url].filter(Boolean).join('\n');
-                const links = Array.from(new Set(allText.match(urlRegex) || []));
                 function linkLabel(link: string) {
                   if (link.includes('drive.google.com')) return '\u{1F4C1} Google Drive';
                   if (link.includes('docs.google.com')) return '\u{1F4C4} Google Doc';
@@ -451,27 +449,46 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
                   if (link.includes('vimeo.com')) return '\u{1F3AC} Vimeo';
                   if (link.includes('carrd.co')) return '\u{1F310} Carrd Portfolio';
                   if (link.includes('behance.net')) return '\u{1F5BC} Behance';
+                  if (link.includes('gamma.site')) return '\u{1F30E} Gamma Portfolio';
+                  if (link.includes('canva.com')) return '\u{1F3A8} Canva';
+                  if (link.includes('.pdf')) return '\u{1F4CB} PDF';
                   return '\u{1F517} Link';
                 }
-                if (links.length === 0) return (
+                // CV links from resume_url
+                const cvLinks = Array.from(new Set((app.resume_url || '').match(urlRegex) || []));
+                // Trial / portfolio links from trial_task_notes, notes, portfolio_url
+                const workText = [app.trial_task_notes, app.portfolio_url].filter(Boolean).join('\n');
+                const workLinks = Array.from(new Set((workText.match(urlRegex) || []).filter((l: string) => !cvLinks.includes(l))));
+                const hasCV = cvLinks.length > 0;
+                const hasWork = workLinks.length > 0;
+                if (!hasCV && !hasWork) return (
                   <div style={{ marginBottom: 16, padding: 12, background: 'var(--bg)', borderRadius: 8, border: '1px dashed var(--border)', textAlign: 'center', color: 'var(--text-dim)', fontSize: 12, fontStyle: 'italic' }}>
-                    No trial task / portfolio link on file
+                    No CV or work samples on file
                   </div>
                 );
+                const linkRow = (link: string, i: number) => (
+                  <a key={i} href={link} target="_blank" rel="noopener noreferrer"
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 7, background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--blue)', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>
+                    <ExternalLink size={14} style={{ flexShrink: 0 }} />
+                    {linkLabel(link)}
+                  </a>
+                );
                 return (
-                  <div style={{ marginBottom: 16, padding: 12, background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--accent)' }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', letterSpacing: 0.5, marginBottom: 8 }}>
-                      {isEditor ? 'PORTFOLIO / SUBMITTED WORK' : 'TRIAL TASK'}
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      {links.map((link, i) => (
-                        <a key={i} href={link} target="_blank" rel="noopener noreferrer"
-                          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 7, background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--blue)', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>
-                          <ExternalLink size={14} style={{ flexShrink: 0 }} />
-                          {linkLabel(link)}
-                        </a>
-                      ))}
-                    </div>
+                  <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {hasCV && (
+                      <div style={{ padding: 12, background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: 0.5, marginBottom: 8 }}>CV / RESUME</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{cvLinks.map(linkRow)}</div>
+                      </div>
+                    )}
+                    {hasWork && (
+                      <div style={{ padding: 12, background: 'var(--bg)', borderRadius: 8, border: '2px solid var(--accent)' }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', letterSpacing: 0.5, marginBottom: 8 }}>
+                          {isEditor ? 'PORTFOLIO / SUBMITTED WORK' : 'TRIAL TASK'}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{workLinks.map(linkRow)}</div>
+                      </div>
+                    )}
                   </div>
                 );
               })()}
