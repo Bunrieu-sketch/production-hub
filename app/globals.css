@@ -555,6 +555,8 @@ textarea {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  min-width: 220px;
+  flex-shrink: 0;
   overflow-y: auto;
   overflow-x: hidden;
 }
