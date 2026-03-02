@@ -48,6 +48,7 @@ const DEFAULT_STAGES = [
   { key: 'trial_sent', label: 'Trial Sent', color: '#a371f7' },
   { key: 'evaluation', label: 'Evaluation', color: '#58a6ff' },
   { key: 'interview', label: 'Interview', color: '#d29922' },
+  { key: 'second_round', label: 'Second Round', color: '#a371f7' },
   { key: 'hired', label: 'Hired', color: '#3fb950' },
 ];
 
@@ -58,6 +59,7 @@ const EDITOR_STAGES = [
   { key: 'trial_sent', label: 'Portfolio Received', color: '#a371f7' },
   { key: 'evaluation', label: 'Portfolio Review', color: '#2f9e44' },
   { key: 'interview', label: 'Interview', color: '#d29922' },
+  { key: 'second_round', label: 'Second Round', color: '#a371f7' },
   { key: 'hired', label: 'Hired', color: '#3fb950' },
 ];
 

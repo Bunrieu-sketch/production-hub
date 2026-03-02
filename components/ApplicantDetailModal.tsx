@@ -61,6 +61,7 @@ const STAGE_LABELS: Record<string, string> = {
   trial_sent: 'Trial Sent',
   evaluation: 'Evaluation',
   interview: 'Interview',
+  second_round: 'Second Round',
   hired: 'Hired',
   rejected: 'Rejected',
 };
@@ -100,8 +101,8 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
     fetch(`/api/hiring/applicants/${applicantId}`).then(r => r.json()).then(data => {
       setApp(data);
       // Open to the most useful tab based on current stage
-      if (data?.stage === 'interview') {
-        setTab('interview'); // Always open to interview tab when at interview stage
+      if (data?.stage === 'interview' || data?.stage === 'second_round') {
+        setTab('interview'); // Always open to interview tab when at interview or second_round stage
       } else if (data?.role_type === 'editor' && (data?.stage === 'trial_sent' || data?.stage === 'evaluation')) {
         setTab('trial');
       } else if (data?.stage === 'evaluation') {
@@ -827,6 +828,7 @@ function stageColor(stage: string): string {
     trial_sent: '#a371f7',
     evaluation: '#58a6ff',
     interview: '#d29922',
+    second_round: '#a371f7',
     hired: '#3fb950',
     rejected: '#f85149',
   };
