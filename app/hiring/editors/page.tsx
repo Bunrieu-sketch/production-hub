@@ -33,6 +33,7 @@ const STAGES = [
   { key: 'contacted', label: 'Portfolio Requested', color: '#d29922' },
   { key: 'evaluation', label: 'Portfolio Review', color: '#a371f7', extraStages: ['trial_sent'] },
   { key: 'interview', label: 'Interview', color: '#d29922' },
+  { key: 'second_round', label: 'Second Round', color: '#a371f7' },
   { key: 'hired', label: 'Hired', color: '#3fb950' },
 ];
 
@@ -54,6 +55,8 @@ export default function EditorHiringPage() {
   const [dragging, setDragging] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState<string | null>(null);
   const [showRejected, setShowRejected] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<{ moved_to_interview: string[]; moved_to_rejected: string[] } | null>(null);
 
   const loadApplicants = useCallback(() => {
     fetch('/api/hiring/applicants?role_type=editor').then(r => r.json()).then(setApplicants);
@@ -66,6 +69,22 @@ export default function EditorHiringPage() {
   }, []);
 
   useEffect(() => { loadApplicants(); loadPositions(); }, [loadApplicants, loadPositions]);
+
+  const handleSyncPipeline = async () => {
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      const res = await fetch('/api/hiring/sync-pipeline', { method: 'POST' });
+      const data = await res.json();
+      setSyncResult(data);
+      loadApplicants();
+      setTimeout(() => setSyncResult(null), 8000);
+    } catch {
+      alert('Failed to sync pipeline. Check console for details.');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const handleDrop = async (stageKey: string) => {
     if (!dragging) return;
@@ -139,6 +158,16 @@ export default function EditorHiringPage() {
                   <span style={{ fontSize: 12, fontWeight: 500, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {app.name}
                   </span>
+                  {app.position_id === 3 && (
+                    <span style={{ fontSize: 9, padding: '1px 4px', borderRadius: 4, background: '#a371f725', color: '#a371f7', fontWeight: 600 }}>
+                      Senior
+                    </span>
+                  )}
+                  {app.position_id === 2 && (
+                    <span style={{ fontSize: 9, padding: '1px 4px', borderRadius: 4, background: '#58a6ff25', color: '#58a6ff', fontWeight: 600 }}>
+                      Junior
+                    </span>
+                  )}
                   <span style={{ fontSize: 9, padding: '1px 4px', borderRadius: 4, background: 'var(--border)', color: 'var(--text-dim)' }}>
                     {SOURCE_LABELS[app.source] || app.source}
                   </span>
@@ -191,10 +220,18 @@ export default function EditorHiringPage() {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 600 }}>Junior Video Editor Hiring</h1>
+          <h1 style={{ fontSize: 22, fontWeight: 600 }}>Video Editor Hiring</h1>
           <a href="/docs/junior-editor-flow" target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#fff', textDecoration: 'none', padding: '5px 12px', borderRadius: 6, background: '#7c3aed', fontWeight: 600, display: 'inline-block' }}>📋 Flow</a>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            className="btn btn-primary"
+            onClick={handleSyncPipeline}
+            disabled={syncing}
+            style={{ opacity: syncing ? 0.6 : 1 }}
+          >
+            {syncing ? '⏳ Syncing...' : '🔄 Update Pipeline'}
+          </button>
           <button
             className="btn btn-secondary"
             onClick={() => setShowRejected(v => !v)}
@@ -207,6 +244,31 @@ export default function EditorHiringPage() {
           </button>
         </div>
       </div>
+
+      {syncResult && (
+        <div style={{
+          background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8,
+          padding: '10px 14px', marginBottom: 12, fontSize: 12, display: 'flex', gap: 16, alignItems: 'center',
+        }}>
+          {syncResult.moved_to_interview.length === 0 && syncResult.moved_to_rejected.length === 0 ? (
+            <span style={{ color: 'var(--text-dim)' }}>No applicants needed pipeline updates.</span>
+          ) : (
+            <>
+              {syncResult.moved_to_interview.length > 0 && (
+                <span style={{ color: '#3fb950' }}>
+                  ✅ Interview: {syncResult.moved_to_interview.join(', ')}
+                </span>
+              )}
+              {syncResult.moved_to_rejected.length > 0 && (
+                <span style={{ color: '#f85149' }}>
+                  ❌ Rejected: {syncResult.moved_to_rejected.join(', ')}
+                </span>
+              )}
+            </>
+          )}
+          <button onClick={() => setSyncResult(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 14 }}>✕</button>
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: 10, overflowX: 'auto', flex: 1, paddingBottom: 16, minHeight: 0 }}>
         {STAGES.map(renderColumn)}

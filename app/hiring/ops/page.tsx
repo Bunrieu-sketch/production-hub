@@ -35,6 +35,7 @@ const STAGES = [
   { key: 'trial_sent', label: 'Trial Sent', color: '#a371f7' },
   { key: 'evaluation', label: 'Evaluation', color: '#58a6ff' },
   { key: 'interview', label: 'Interview', color: '#d29922' },
+  { key: 'second_round', label: 'Second Round', color: '#a371f7' },
   { key: 'hired', label: 'Hired', color: '#3fb950' },
 ];
 
@@ -56,6 +57,8 @@ export default function OpsHiringPage() {
   const [dragging, setDragging] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState<string | null>(null);
   const [showRejected, setShowRejected] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<{ moved_to_interview: string[]; moved_to_rejected: string[] } | null>(null);
 
   const loadApplicants = useCallback(() => {
     fetch('/api/hiring/applicants?role_type=producer').then(r => r.json()).then(setApplicants);
@@ -68,6 +71,22 @@ export default function OpsHiringPage() {
   }, []);
 
   useEffect(() => { loadApplicants(); loadPositions(); }, [loadApplicants, loadPositions]);
+
+  const handleSyncPipeline = async () => {
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      const res = await fetch('/api/hiring/sync-pipeline', { method: 'POST' });
+      const data = await res.json();
+      setSyncResult(data);
+      loadApplicants();
+      setTimeout(() => setSyncResult(null), 8000);
+    } catch {
+      alert('Failed to sync pipeline. Check console for details.');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const handleDrop = async (stageKey: string) => {
     if (!dragging) return;
@@ -197,6 +216,14 @@ export default function OpsHiringPage() {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button
+            className="btn btn-primary"
+            onClick={handleSyncPipeline}
+            disabled={syncing}
+            style={{ opacity: syncing ? 0.6 : 1 }}
+          >
+            {syncing ? '⏳ Syncing...' : '🔄 Update Pipeline'}
+          </button>
+          <button
             className="btn btn-secondary"
             onClick={() => setShowRejected(v => !v)}
             style={{ color: showRejected ? '#f85149' : undefined, borderColor: showRejected ? '#f85149' : undefined }}
@@ -208,6 +235,31 @@ export default function OpsHiringPage() {
           </button>
         </div>
       </div>
+
+      {syncResult && (
+        <div style={{
+          background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8,
+          padding: '10px 14px', marginBottom: 12, fontSize: 12, display: 'flex', gap: 16, alignItems: 'center',
+        }}>
+          {syncResult.moved_to_interview.length === 0 && syncResult.moved_to_rejected.length === 0 ? (
+            <span style={{ color: 'var(--text-dim)' }}>No applicants needed pipeline updates.</span>
+          ) : (
+            <>
+              {syncResult.moved_to_interview.length > 0 && (
+                <span style={{ color: '#3fb950' }}>
+                  ✅ Interview: {syncResult.moved_to_interview.join(', ')}
+                </span>
+              )}
+              {syncResult.moved_to_rejected.length > 0 && (
+                <span style={{ color: '#f85149' }}>
+                  ❌ Rejected: {syncResult.moved_to_rejected.join(', ')}
+                </span>
+              )}
+            </>
+          )}
+          <button onClick={() => setSyncResult(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 14 }}>✕</button>
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: 10, overflowX: 'auto', flex: 1, paddingBottom: 16, minHeight: 0 }}>
         {STAGES.map(renderColumn)}
