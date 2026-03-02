@@ -455,10 +455,11 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
                   if (link.includes('.pdf')) return '\u{1F4CB} PDF';
                   return '\u{1F517} Link';
                 }
-                // CV links from resume_url
-                const cvLinks = Array.from(new Set((app.resume_url || '').match(urlRegex) || []));
-                // Trial / portfolio links from trial_task_notes, notes, portfolio_url
-                const workText = [app.trial_task_notes, app.portfolio_url, app.notes].filter(Boolean).join('\n');
+                // CV links: resume_url always; portfolio_url for Content Ops (not editors)
+                const cvText = [app.resume_url, !isEditor ? app.portfolio_url : ''].filter(Boolean).join('\n');
+                const cvLinks = Array.from(new Set((cvText.match(urlRegex) || [])));
+                // Trial task links: trial_task_notes + notes URLs (editors also get portfolio_url)
+                const workText = [app.trial_task_notes, isEditor ? app.portfolio_url : '', app.notes].filter(Boolean).join('\n');
                 const workLinks = Array.from(new Set((workText.match(urlRegex) || []).filter((l: string) => !cvLinks.includes(l))));
                 const hasCV = cvLinks.length > 0;
                 const hasWork = workLinks.length > 0;
