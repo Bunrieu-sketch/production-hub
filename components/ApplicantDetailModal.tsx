@@ -244,7 +244,7 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 640, padding: 0 }}>
+      <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 640, width: '100%', padding: 0 }}>
         {/* Header */}
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
@@ -439,6 +439,43 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
                 )}
               </div>
 
+              {/* Trial Task / Portfolio Link — quick access during interview */}
+              {(() => {
+                const urlRegex = /(https?:\/\/[^\s,)]+)/g;
+                const allText = [app.trial_task_notes, app.notes, app.portfolio_url].filter(Boolean).join('\n');
+                const links = Array.from(new Set(allText.match(urlRegex) || []));
+                function linkLabel(link: string) {
+                  if (link.includes('drive.google.com')) return '\u{1F4C1} Google Drive';
+                  if (link.includes('docs.google.com')) return '\u{1F4C4} Google Doc';
+                  if (link.includes('youtube.com') || link.includes('youtu.be')) return '\u25B6\uFE0F YouTube';
+                  if (link.includes('vimeo.com')) return '\u{1F3AC} Vimeo';
+                  if (link.includes('carrd.co')) return '\u{1F310} Carrd Portfolio';
+                  if (link.includes('behance.net')) return '\u{1F5BC} Behance';
+                  return '\u{1F517} Link';
+                }
+                if (links.length === 0) return (
+                  <div style={{ marginBottom: 16, padding: 12, background: 'var(--bg)', borderRadius: 8, border: '1px dashed var(--border)', textAlign: 'center', color: 'var(--text-dim)', fontSize: 12, fontStyle: 'italic' }}>
+                    No trial task / portfolio link on file
+                  </div>
+                );
+                return (
+                  <div style={{ marginBottom: 16, padding: 12, background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--accent)' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', letterSpacing: 0.5, marginBottom: 8 }}>
+                      {isEditor ? 'PORTFOLIO / SUBMITTED WORK' : 'TRIAL TASK'}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {links.map((link, i) => (
+                        <a key={i} href={link} target="_blank" rel="noopener noreferrer"
+                          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 7, background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--blue)', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>
+                          <ExternalLink size={14} style={{ flexShrink: 0 }} />
+                          {linkLabel(link)}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* 1-10 Interview Score — front and centre */}
               <div className="form-group">
                 <label className="form-label" style={{ fontSize: 13, fontWeight: 700 }}>Interview Score (1–10)</label>
@@ -513,7 +550,7 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
                   {(() => {
                     const urlRegex = /(https?:\/\/[^\s,)]+)/g;
                     const initialLinks: string[] = app.portfolio_url ? (app.portfolio_url.match(urlRegex) || []) : [];
-                    const submittedLinks = ([app.notes, app.trial_task_notes] as (string | undefined)[])
+                    const submittedLinks = ([app.trial_task_notes] as (string | undefined)[])
                       .filter((s): s is string => Boolean(s))
                       .flatMap(s => s.match(urlRegex) || [])
                       .filter(l => !initialLinks.includes(l));
@@ -616,10 +653,10 @@ export default function ApplicantDetailModal({ applicantId, onClose, onSaved }: 
                   {/* Submission content first — this is what you want to review */}
                   <div style={{ marginBottom: 16, padding: 14, background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
                     <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)', marginBottom: 8 }}>SUBMISSION</div>
-                    {app.trial_task_notes || app.notes ? (
+                    {app.trial_task_notes ? (
                       <div style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--text)', whiteSpace: 'pre-wrap', overflow: 'hidden' }}>
                         {(() => {
-                          const allNotes = [app.trial_task_notes, app.notes].filter(Boolean).join('\n');
+                          const allNotes = [app.trial_task_notes].filter(Boolean).join('\n');
                           const urlRegex = /(https?:\/\/[^\s,)]+)/g;
                           const links = allNotes.match(urlRegex);
                           return (
