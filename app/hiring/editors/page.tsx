@@ -19,6 +19,8 @@ interface Applicant {
   portfolio_url: string;
   desired_salary: string;
   experience: string;
+  second_round_sub_stage: string | null;
+  second_round_trial_score: number;
   created_at: string;
   updated_at: string;
 }
@@ -208,6 +210,33 @@ export default function EditorHiringPage() {
                     </div>
                   ) : null;
                 })()}
+
+                {app.stage === 'second_round' && app.second_round_sub_stage && (
+                  <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <span style={{
+                      fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 6,
+                      background: app.second_round_sub_stage === 'trial_submitted' ? '#3fb95018' :
+                                  app.second_round_sub_stage === 'trial_pending' ? '#d2992218' : '#58a6ff18',
+                      color: app.second_round_sub_stage === 'trial_submitted' ? '#3fb950' :
+                             app.second_round_sub_stage === 'trial_pending' ? '#d29922' : '#58a6ff',
+                      display: 'inline-block', width: 'fit-content',
+                    }}>
+                      {app.second_round_sub_stage === 'interview' && '🗓 2nd Interview'}
+                      {app.second_round_sub_stage === 'trial_pending' && '⏳ Trial Pending'}
+                      {app.second_round_sub_stage === 'trial_submitted' && '📬 Trial Submitted'}
+                    </span>
+                    {app.second_round_trial_score > 0 && (
+                      <span style={{
+                        fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 6,
+                        background: app.second_round_trial_score >= 7 ? '#3fb95025' : app.second_round_trial_score >= 4 ? '#d2992225' : '#f8514925',
+                        color: app.second_round_trial_score >= 7 ? '#3fb950' : app.second_round_trial_score >= 4 ? '#d29922' : '#f85149',
+                        display: 'inline-block', width: 'fit-content',
+                      }}>
+                        Score: {app.second_round_trial_score}/10
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}

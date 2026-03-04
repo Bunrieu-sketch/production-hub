@@ -181,6 +181,7 @@ function initDb() {
 
       placement TEXT DEFAULT 'first_5_min',
       integration_length_seconds INTEGER DEFAULT 60,
+        integration_start_seconds INTEGER DEFAULT NULL,
       brief_text TEXT DEFAULT '',
       brief_link TEXT DEFAULT '',
       script_draft TEXT DEFAULT '',
@@ -223,6 +224,16 @@ function initDb() {
 
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
+    );
+
+    -- ── Sponsor Files ─────────────────────────────────────────────────────
+    CREATE TABLE IF NOT EXISTS sponsor_files (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      sponsor_id INTEGER NOT NULL REFERENCES sponsors(id) ON DELETE CASCADE,
+      file_type TEXT NOT NULL CHECK(file_type IN ('invoice','contract','brief','other')),
+      label TEXT NOT NULL,
+      file_path TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
     );
 
     -- ── Episode Phases ───────────────────────────────────────────────────
@@ -339,7 +350,9 @@ function initDb() {
   migrateSeriesSchema();
   migrateSponsorsSchema();
   migrateHiringStages();
+  migrateSecondRoundColumns();
   seedFieldContacts();
+  seedSponsorFiles();
 }
 
 function migrateEpisodesSchema() {
@@ -457,6 +470,7 @@ function migrateSponsorsSchema() {
 
         placement TEXT DEFAULT 'first_5_min',
         integration_length_seconds INTEGER DEFAULT 60,
+        integration_start_seconds INTEGER DEFAULT NULL,
         brief_text TEXT DEFAULT '',
         brief_link TEXT DEFAULT '',
         script_draft TEXT DEFAULT '',
@@ -604,6 +618,24 @@ function migrateHiringStages() {
   }
 }
 
+function migrateSecondRoundColumns() {
+  if (!db) return;
+  const database = db;
+
+  const columns = database.prepare("PRAGMA table_info(applicants)").all() as Array<{ name: string }>;
+  const columnNames = new Set(columns.map(col => col.name));
+
+  const addColumn = (name: string, definition: string) => {
+    if (!columnNames.has(name)) {
+      database.exec(`ALTER TABLE applicants ADD COLUMN ${name} ${definition}`);
+    }
+  };
+
+  addColumn('second_round_trial_sent_at', 'DATETIME');
+  addColumn('second_round_last_checkin_at', 'DATETIME');
+  addColumn('second_round_checkin_count', 'INTEGER DEFAULT 0');
+}
+
 // ── Migration helpers ──────────────────────────────────────────────────────
 
 function seedFieldContacts() {
@@ -651,6 +683,21 @@ function seedFieldContacts() {
   });
 
   insertMany(seed);
+}
+
+function seedSponsorFiles() {
+  if (!db) return;
+  const count = (db.prepare('SELECT COUNT(*) as count FROM sponsor_files').get() as { count: number }).count;
+  if (count > 0) return;
+
+  const insert = db.prepare(
+    'INSERT INTO sponsor_files (sponsor_id, file_type, label, file_path) VALUES (?, ?, ?, ?)'
+  );
+  const txn = db.transaction(() => {
+    insert.run(19, 'contract', 'Elithair Contract – Integration 2', '/Users/montymac/hellp/agents/max/contracts/elithair/elithair-contract-integration-2.pdf');
+    insert.run(19, 'invoice', 'INV-0019 – Elithair 2nd Integration', '/Users/montymac/hellp/agents/max/invoices/INV-0019-Elithair.pdf');
+  });
+  txn();
 }
 
 export function generateMilestones(seriesId: number, shootStart: string) {
